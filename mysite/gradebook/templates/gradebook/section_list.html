@@ -1,0 +1,34 @@
+{% extends 'generic_view.html' %}
+
+{% block content %}
+<h3>Your Courses</h3>
+<table class="highlight striped">
+  <thead>
+  <tr>
+    <th data-field="course-category">Course</th>
+    <th data-field="section_id">Section ID</th>
+    <th data-field="description">Description</th>
+  </tr>
+  </thead>
+
+  <tbody>
+  {% for section in section_list %}
+  <tr>
+    <td>{{ section.course.title }}</td>
+    <td>{{ section.section_id }}</td>
+    <td>{{ section.description }}</td>
+    <td>
+      <a href="{% url 'section' section.pk %}">
+        <button class="btn waves-effect waves-light btn" type="submit" name="action">
+          Go
+          <i class="material-icons right">send</i>
+        </button>
+      </a>
+    </td>
+  </tr>
+
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

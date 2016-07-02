@@ -1,0 +1,124 @@
+{% extends 'generic_view.html' %}
+
+{% block content %}
+<p>
+<h3>{{ current_section.course.title }}</h3>
+<h6>Section ID: {{ current_section.section_id }}</h6>
+</p>
+<ul class="collapsible" data-collapsible="accordian">
+  <li>
+    <div class="collapsible-header"><i class="material-icons">library_books</i><h4>Description</h4></div>
+    <div class="collapsible-body"><p>{{ current_section.description }}</p></div>
+  </li>
+</ul>
+<style type="text/css">
+  .table-with-buttons
+  /*th:nth-last-child(2) {*/ {
+    text-align: right;
+  }
+</style>
+<ul class="collapsible" data-collapsible="accordion">
+  <li>
+    <div class="collapsible-header"><i class="material-icons">library_books</i>
+      <h4>{{ assignments.count }} Assignments</h4></div>
+    <div class="collapsible-body">
+      <div style="padding-left: 5px; padding-right: 5px;">
+        <table class="highlight striped">
+          <thead>
+          <tr>
+            <th data-field="category">Category</th>
+            <th data-field="title">Title</th>
+            <th data-field="date_created">Date Created</th>
+            <th data-field="date_due">Date Due</th>
+            <th data-field="is_complete">Is Complete</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          {% for assignment in assignments %}
+          <tr>
+            <td>{{ assignment.get_assignment_category }}</td>
+            <td>{{ assignment.title }}</td>
+            <td>{{ assignment.date_created }}</td>
+            <td>{{ assignment.date_due }}</td>
+            <td>{{ assignment.is_complete }}</td>
+            <td class="table-with-buttons"><a href="{% url 'assignment_edit' assignment.section.pk assignment.pk %}">
+              <button class="btn waves-effect waves-light btn" type="submit" name="action">
+                Edit
+                <i class="material-icons right">send</i>
+              </button>
+            </a></td>
+          </tr>
+          {% endfor %}
+
+          <tr>
+            <td>
+              <a href="{% url 'assignment_new' current_section.pk %}">
+                <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
+                  Add an Assignment
+                  <i class="material-icons right">send</i>
+                </button>
+              </a>
+            </td>
+          </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </li>
+</ul>
+
+<ul class="collapsible" data-collapsible="accordion">
+  <li>
+    <div class="collapsible-header"><i class="material-icons">library_books</i>
+      <h4>{{ enrollments.count }} Students Enrolled</h4></div>
+    <div class="collapsible-body">
+      <div style="padding-left: 5px; padding-right: 5px; padding-bottom: 5px;">
+        <table class="highlight striped">
+          <thead>
+          <tr>
+            <th data-field="student_id">Student ID</th>
+            <th data-field="last_name">Last Name</th>
+            <th data-field="first_name">First Name</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          {% for enrolled in enrollments %}
+          <tr>
+            <td>{{ enrolled.student.student_id }}</td>
+            <td>{{ enrolled.student.user.last_name }}</td>
+            <td>{{ enrolled.student.user.first_name }}</td>
+            <td class="table-with-buttons">
+              <a href="#">
+                <button class="btn waves-effect waves-light btn" type="submit" name="action">
+                  Go
+                </button>
+              </a>
+              <a href="{% url 'enrollment_delete' enrolled.section.pk enrolled.pk %}">
+                <button class="btn waves-effect waves-light btn red" type="submit" name="action">
+                  Drop
+                </button>
+              </a>
+            </td>
+          </tr>
+
+          {% endfor %}
+          <tr>
+            <td>
+              <a href="{% url 'enrollment_new' current_section.pk %}">
+                <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
+                  Enroll a Student
+                  <i class="material-icons right">send</i>
+                </button>
+              </a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </li>
+</ul>
+{% endblock %}
