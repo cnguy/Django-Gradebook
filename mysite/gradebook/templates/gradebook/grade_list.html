@@ -1,16 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Title</title>
-</head>
-<body>
-<ol>
-{% for grade in grade_list %}
-  <li>
-    {{ grade }}
-  </li>
-{% endfor %}
-</ol>
-</body>
-</html>
+{% extends 'generic_view.html' %}
+
+{% block content %}
+
+<table class="highlight responsive-table">
+  <thead>
+  <tr>
+    <th data-field="category">Category</th>
+    <th data-field="title">Title</th>
+    <th data-field="date_time_created">Grade</th>
+    <th data-field="points">Points</th>
+    <th data-field="total_points">Total Points</th>
+    <th data-field="percentage_grade">%</th>
+  </thead>
+
+  <tbody>
+  <tr bgcolor="#EFEFEF">
+    <td></td>
+    <td></td>
+    <td>{{ letter_grade }}</td>
+    <td>{{ sum_of_points }}</td>
+    <td>{{ total_points }}</td>
+    <td>{{ total_grade_percentage }}</td>
+    <td></td>
+  </tr>
+
+  {% for grade in grade_list %}
+  <tr>
+    <td>{{ grade.assignment.get_assignment_category }}</td>
+    <td>{{ grade.assignment.title }}</td>
+    <td>{{ grade.get_grade }}</td>
+    <td>{{ grade.points }}</td>
+    <td>{{ grade.assignment.points_possible }}</td>
+    <td>{{ grade.get_percent_grade }}</td>
+    <td class="table-with-buttons">
+      <a href="#">
+        <button class="btn waves-effect waves-light btn" type="submit" name="action">
+          Edit
+          <i class="material-icons right">send</i>
+        </button>
+      </a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<a href="#">
+  <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
+    +
+  </button>
+</a>
+
+{% endblock %}

@@ -51,9 +51,9 @@ class Assignment(models.Model):
     title = models.CharField(max_length=200)
     section = models.ForeignKey(Section)
     description = models.CharField(max_length=200)
-    date_created = models.DateTimeField(default=timezone.now)
-    date_due = models.DateTimeField(blank=True, null=True)
-    is_complete = models.BooleanField(default=False)
+    date_time_created = models.DateTimeField(default=timezone.now)
+    date_time_due = models.DateTimeField(blank=True, null=True)
+    points_possible = models.IntegerField()
 
     CATEGORIES = {
         ('essay', "Essay"),
@@ -67,7 +67,7 @@ class Assignment(models.Model):
     category = models.CharField(choices=CATEGORIES, max_length=200)
 
     def __str__(self):
-        return str(self.title) + ": " + str(self.description)
+        return "[" + self.get_assignment_category() + "] " + str(self.title) + ": " + str(self.description)
 
     def get_assignment_category(self):
         return dict(self.CATEGORIES).get(str(self.category))
@@ -84,6 +84,7 @@ class Enrollment(models.Model):
 class Grade(models.Model):
     enrollment = models.ForeignKey(Enrollment)
     assignment = models.ForeignKey(Assignment)
+    points = models.FloatField()
 
     ASSIGNMENT_GRADES = (
         ('a+', "A+"), ('a', "A"), ('a-', "A-"),
@@ -96,4 +97,12 @@ class Grade(models.Model):
     grade = models.CharField(choices=ASSIGNMENT_GRADES, max_length=3, default="A+")
 
     def __str__(self):
-        return str(self.assignment) + " - " + str(self.grade)
+        return super().__str__() + str(self.assignment) + " - " + str(self.grade)
+
+    def get_percent_grade(self):
+        # "{0:.0f}%".format(1./3 * 100)
+        # return str(self.points / self.assignment.points_possible)
+        return "{0:.0f}%".format(self.points/self.assignment.points_possible * 100)
+
+    def get_grade(self):
+        return dict(self.ASSIGNMENT_GRADES).get(str(self.grade))

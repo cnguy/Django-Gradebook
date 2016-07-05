@@ -11,6 +11,8 @@
   <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css"> -->
   <link rel="stylesheet" type="text/css" href="{% static 'css/materialize.css' %}"/>
   <link rel="stylesheet" type="text/css" href="{% static 'css/auth_pages.css' %}"/>
+
+  <link rel="stylesheet" type="text/css" href="{% static 'css/models_view.css' %}"/>
   <!--Let browser know website is optimized for mobile-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
@@ -24,9 +26,11 @@
       </a>
       <a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons">menu</i></a>
       <ul class="right hide-on-med-and-down">
+        <li><a href="{% url 'section_list' %}">Sections</a></li>
         <li><a href="{% url 'logout' %}">Logout</a></li>
       </ul>
       <ul class="side-nav" id="mobile-demo">
+        <li><a href="{% url 'section_list' %}">Sections</a></li>
         <li><a href="{% url 'logout' %}">Logout</a></li>
       </ul>
     </div>
@@ -38,9 +42,16 @@
 </div>
 <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 <script type="text/javascript" src="{% static 'js/materialize.js' %}"></script>
-<script type="text/javascript">
+<script type="text/javascript"> // This loads on every single page. Kinda a waste, but it's fine for this simple project.
   $(document).ready(function () {
     $(".button-collapse").sideNav();
+    $('select').material_select();
+    $("#id_date_time_created, #id_date_time_due").pickadate({
+      format: 'yyyy-mm-dd',
+      selectMonths: true, // Creates a dropdown to control month
+      selectYears: 15 // Creates a dropdown of 15 years to control year
+    });
+//    document.getElementById('id_date_created').value.length += "22:53:05"
   });
 </script>
 </body>

@@ -20,20 +20,25 @@ class LoginPageView(TemplateView):
     template_name = 'login.html'
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated():
-            return redirect('/secret/')
-        request.session.set_test_cookie()
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-
-        user = authenticate(username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            return redirect('/secret/')
-        else:
-            # TODO: fix invalid message
+        if request.method == 'GET':
+            if request.user.is_authenticated():
+                return redirect('/secret/')
             return super(LoginPageView, self).dispatch(request, *args, {'invalid': True})
+        else:
+
+            request.session.set_test_cookie()
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+
+            user = authenticate(username=username, password=password)
+
+            if user is not None:
+                login(request, user)
+                return redirect('/secret/')
+            else:
+                # TODO: fix invalid message
+                return redirect('/login', {'invalid': True})
+                # return super(LoginPageView, self).dispatch(request, *args, {'invalid': True})
 
 
 class LogoutView(TemplateView):
@@ -55,29 +60,34 @@ class RegisterTeacher(TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated():
             return redirect('/secret/')
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        email = request.POST.get('email')
-        confirm_password = request.POST.get('confirm_password')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
 
-        if password == confirm_password:
-            user = User.objects.create_user(
-                username,
-                email,
-                password,
-            )
-            user.first_name = first_name
-            user.last_name = last_name
-            user.save()
-            user = authenticate(
-                username=username,
-                password=password
-            )
-            teacher = Teacher(user=user)
-            teacher.save()
-            return redirect('/main/')
+        if request.method == 'POST':
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+            email = request.POST.get('email')
+            confirm_password = request.POST.get('confirm_password')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+
+            if password == confirm_password:
+                user = User.objects.create_user(
+                    username,
+                    email,
+                    password,
+                )
+                user.first_name = first_name
+                user.last_name = last_name
+                user.save()
+                teacher = Teacher(user=user)
+                teacher.save()
+
+                user = authenticate(
+                    username=username,
+                    password=password
+                )
+
+                login(request, user)
+                return redirect('/staff/')
         else:
             return redirect('/register/')
 
@@ -90,6 +100,7 @@ class RegisterStudent(TemplateView):
         confirm_password = request.POST.get('confirm_password2')
         first_name = request.POST.get('first_name2')
         last_name = request.POST.get('last_name2')
+        student_id = request.POST.get('student_id')
 
         if password == confirm_password:
             user = User.objects.create_user(
@@ -100,13 +111,13 @@ class RegisterStudent(TemplateView):
             user.first_name = first_name
             user.last_name = last_name
             user.save()
+            student = Student(user=user, student_id=student_id)
+            student.save()
             user = authenticate(
                 username=username,
                 password=password
             )
-            student = Student(user=user)
-            student.save()
-            return redirect('/secret/')
+            return redirect('/student/')
         else:
             return redirect('/register/')
 
@@ -117,12 +128,31 @@ class SomeSecretView(LoginRequiredMixin, TemplateView):
     raise_exception = False
 
 
+class GenericForm(object):
+    """
+    This is for other Classes to inherit so that they can all have the section id needed
+    to link back to the previous section's page. I use this for the Create/Update forms.
+    """
+    def get_context_data(self, **kwargs):
+        context = super(GenericForm, self).get_context_data(**kwargs)
+        section_pk = self.kwargs.get('sec')
+        context['current_section_pk'] = section_pk
+        return context
+
+
+class StudentList(ListView):
+    model = Student
+    template_name = 'student_list.html'
+
+
 class TeacherList(ListView):
     model = Teacher
+    template_name = 'teacher_list.html'
 
 
 class CourseList(ListView):
     model = Course
+    template_name = 'course_list.html'
 
 
 class SectionList(LoginRequiredMixin, ListView):
@@ -134,19 +164,6 @@ class SectionList(LoginRequiredMixin, ListView):
         teacher = get_object_or_404(Teacher, user=self.request.user)
         return Section.objects.filter(teacher=teacher)
 
-    #
-    # def get_queryset(self):
-    #     course = get_object_or_404(Course, id=self.kwargs['crs'])
-    #     return Section.objects.filter(course=course)
-
-
-# class EnrollmentList(ListView):
-#     model = Enrollment
-#
-#     def get_queryset(self):
-#         section = get_object_or_404(Section, id=self.kwargs['sec'])
-#         return Enrollment.objects.filter(section=section)
-
 
 class EnrollmentViewMixin(object):
     model = Enrollment
@@ -156,10 +173,7 @@ class EnrollmentViewMixin(object):
                             kwargs={'sec': self.kwargs['sec']})
 
 
-class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, CreateView):
-    #model = Enrollment
-    #success_url = reverse_lazy('enrollment_list')
-
+class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, GenericForm, CreateView):
     fields = ['section', 'student']
 
     def get_initial(self):
@@ -167,14 +181,6 @@ class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, CreateView):
         return {
             'section': section
         }
-
-    def form_valid(self, form):
-        if form.instance not in Enrollment.objects.all():
-            return super(EnrollmentCreate, self).form_valid(form)
-        else: # TODO: FIX
-            return super(EnrollmentCreate, self).form_invalid(form)
-            #return reverse_lazy('enrollment_new',
-                                # kwargs={'sec': self.kwargs['sec']})
 
 
 class EnrollmentDelete(LoginRequiredMixin, EnrollmentViewMixin, DeleteView):
@@ -196,8 +202,8 @@ class AssignmentList(LoginRequiredMixin, AssignmentViewMixin, ListView):
         return Assignment.objects.filter(section=section)
 
 
-class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, CreateView):
-    fields = ['section', 'title', 'description', 'category', 'date_created', 'date_due', 'is_complete']
+class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, GenericForm, CreateView):
+    fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_time_due']
 
     def get_initial(self):
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
@@ -206,9 +212,9 @@ class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, CreateView):
         }
 
 
-class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, UpdateView):
+class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, GenericForm, UpdateView):
     model = Assignment
-    fields = ['section', 'title', 'description', 'category', 'date_created', 'date_due', 'is_complete']
+    fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_time_due']
 
     def get_initial(self):
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
@@ -221,22 +227,37 @@ class GradeList(ListView):
     model = Grade
 
     def get_queryset(self):
-        enrollment = get_object_or_404(Enrollment, id=self.kwargs['student'])
+        enrollment = get_object_or_404(Enrollment, id=self.kwargs['pk'], section=self.kwargs['sec'])
         return Grade.objects.filter(enrollment=enrollment)
 
+    def get_context_data(self, **kwargs):
+        context = super(GradeList, self).get_context_data(**kwargs)
+        sum_of_points = 0
+        total_points = 0.0
+        enrollment = get_object_or_404(Enrollment, id=self.kwargs['pk'], section=self.kwargs['sec'])
+        grades = Grade.objects.filter(enrollment=enrollment)
 
-class StudentList(ListView):
-    model = Student
+        for grade in grades:
+            total_points += grade.assignment.points_possible
+            sum_of_points += grade.points
 
+        context['total_grade_percentage'] = "{0:.0f}%".format(sum_of_points/total_points * 100)
+        context['total_points'] = total_points
+        context['sum_of_points'] = sum_of_points
+        context['letter_grade'] = 'A'
+        return context
 
 class SpecificSection(LoginRequiredMixin, TemplateView):
+    """
+    A view to display the description, enrollment, and assignments of a specific section.
+    """
     template_name = 'gradebook/section.html'
 
     def get_context_data(self, **kwargs):
         teacher = get_object_or_404(Teacher, user=self.request.user)
-        section = get_object_or_404(Section, teacher=teacher)
+        section = get_object_or_404(Section, teacher=teacher, pk=self.kwargs['sec'])
         context = super(SpecificSection, self).get_context_data(**kwargs)
         context['current_section'] = section
-        context['assignments'] = Assignment.objects.filter(section=section).order_by('date_created')
+        context['assignments'] = Assignment.objects.filter(section=section).order_by('date_time_created')
         context['enrollments'] = Enrollment.objects.filter(section=section).order_by('student__user__last_name')
         return context

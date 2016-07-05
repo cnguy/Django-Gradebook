@@ -19,44 +19,41 @@
 <body>
 <div id="container">
   <div class="row">
-    <form class="col s8 m6 offset-m3" method="POST" action="{% url 'register_teacher' %}">
+    <form class="col s12 m6 offset-m3" method="POST" action="{% url 'register_teacher' %}">
       <ul class="collapsible popout" data-collapsible="accordion">
         <li>
-          {% if invalid %}
-          Passwords do not match.
-          {% endif %}
           <div class="collapsible-header">
             <div class="row">
-              <div class="col s8"><h3 class="header">As a Teacher</h3></div>
+              <div class="col s12"><h3 class="header">As a Teacher</h3></div>
             </div>
           </div>
           <div class="collapsible-body">
             <div class="row">
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="username" name="username" type="text" value=""/>
                 <label for="username">Username</label>
               </div>
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="email" name="email" type="text" value=""/>
                 <label for="email">Email</label>
               </div>
             </div>
             <div class="row">
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="first_name" name="first_name" type="text" value=""/>
                 <label for="first_name">First Name</label>
               </div>
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="last_name" name="last_name" type="text" value=""/>
                 <label for="last_name">Last Name</label>
               </div>
             </div>
             <div class="row">
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="password" name="password" type="password" value=""/>
                 <label for="password">Password</label>
               </div>
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="confirm_password" name="confirm_password" type="password" value=""/>
                 <label for="confirm_password">Confirm PW</label>
               </div>
@@ -75,44 +72,47 @@
     </form>
   </div>
   <div class="row">
-    <form class="col s8 m6 offset-m3" method="POST" action="{% url 'register_student' %}">
+    <form class="col s12 m6 offset-m3" method="POST" action="{% url 'register_student' %}">
       <ul class="collapsible popout" data-collapsible="accordion">
         <li>
-          {% if invalid %}
-          Passwords do not match.
-          {% endif %}
           <div class="collapsible-header">
             <div class="row">
-              <div class="col s8"><h3 class="header">As a Student</h3></div>
+              <div class="col s12"><h3 class="header">As a Student</h3></div>
             </div>
           </div>
           <div class="collapsible-body">
             <div class="row">
-              <div class="input-field col s4">
-                <input id="username2" name="username2" type="text" value=""/>
-                <label for="username2">Username</label>
-              </div>
-              <div class="input-field col s4">
+              <div class="input-field col s12">
                 <input id="email2" name="email2" type="text" value=""/>
                 <label for="email2">Email</label>
               </div>
             </div>
             <div class="row">
-              <div class="input-field col s4">
+              <div class="input-field col s6">
+                <input id="username2" name="username2" type="text" value=""/>
+                <label for="username2">Username</label>
+              </div>
+              <div class="input-field col s6">
+                <input id="student_id" name="student_id" type="text" value=""/>
+                <label for="student_id">Student ID</label>
+              </div>
+            </div>
+            <div class="row">
+              <div class="input-field col s6">
                 <input id="first_name2" name="first_name2" type="text" value=""/>
                 <label for="first_name2">First Name</label>
               </div>
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="last_name2" name="last_name2" type="text" value=""/>
                 <label for="last_name2">Last Name</label>
               </div>
             </div>
             <div class="row">
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="password2" name="password2" type="password" value=""/>
                 <label for="password2">Password</label>
               </div>
-              <div class="input-field col s4">
+              <div class="input-field col s6">
                 <input id="confirm_password2" name="confirm_password2" type="password" value=""/>
                 <label for="confirm_password2">Confirm PW</label>
               </div>

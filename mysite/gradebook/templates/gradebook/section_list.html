@@ -2,7 +2,7 @@
 
 {% block content %}
 <h3>Your Courses</h3>
-<table class="highlight striped">
+<table class="highlight responsive-table">
   <thead>
   <tr>
     <th data-field="course-category">Course</th>
@@ -17,10 +17,10 @@
     <td>{{ section.course.title }}</td>
     <td>{{ section.section_id }}</td>
     <td>{{ section.description }}</td>
-    <td>
+    <td class="table-with-buttons">
       <a href="{% url 'section' section.pk %}">
         <button class="btn waves-effect waves-light btn" type="submit" name="action">
-          Go
+          View
           <i class="material-icons right">send</i>
         </button>
       </a>
