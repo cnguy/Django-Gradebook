@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Your Courses</title>
+  <title>Gradebook</title>
   {% load staticfiles %}
 
   <!--Import Google Icon Font-->
@@ -43,16 +43,16 @@
 <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 <script type="text/javascript" src="{% static 'js/materialize.js' %}"></script>
 <script type="text/javascript"> // This loads on every single page. Kinda a waste, but it's fine for this simple project.
-  $(document).ready(function () {
-    $(".button-collapse").sideNav();
-    $('select').material_select();
-    $("#id_date_time_created, #id_date_time_due").pickadate({
-      format: 'yyyy-mm-dd',
-      selectMonths: true, // Creates a dropdown to control month
-      selectYears: 15 // Creates a dropdown of 15 years to control year
-    });
-//    document.getElementById('id_date_created').value.length += "22:53:05"
+$(document).ready(function () {
+  $(".button-collapse").sideNav();
+  $('select').material_select();
+  $("#id_date_time_created, #id_date_time_due").pickadate({
+    format: 'yyyy-mm-dd',
+    selectMonths: true, // Creates a dropdown to control month
+    selectYears: 15 // Creates a dropdown of 15 years to control year
   });
+//    document.getElementById('id_date_created').value.length += "22:53:05"
+});
 </script>
 </body>
 </html>

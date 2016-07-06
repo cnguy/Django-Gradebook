@@ -3,12 +3,26 @@
 {% block content %}
 <p>
 <h3>{{ current_section.course.title }}</h3>
-<h6>Section ID: {{ current_section.section_id }}</h6>
+<h5>Section ID: {{ current_section.section_id }}</h5>
 </p>
 <ul class="collapsible" data-collapsible="accordian">
   <li>
-    <div class="collapsible-header"><i class="material-icons">library_books</i><h4>Description</h4></div>
+    <div class="collapsible-header"><i class="material-icons">library_books</i>
+      <h4>Description</h4></div>
     <div class="collapsible-body"><p>{{ current_section.description }}</p></div>
+  </li>
+</ul>
+
+<ul class="collapsible" data-collapsible="accordian">
+  <li>
+    <div class="collapsible-header"><i class="material-icons">library_books</i>
+      <h4>{{ announcements.count }} Announcements</h4></div>
+    <div class="collapsible-body">
+      {% for announcement in announcements %}
+      <div class="announcement_header">{{ announcement.title }}</div>
+      <div class="announcement_desc">{{ announcement.details }}</div>
+      {% endfor %}
+    </div>
   </li>
 </ul>
 

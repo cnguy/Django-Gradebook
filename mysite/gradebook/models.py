@@ -4,7 +4,7 @@ from django.utils import timezone
 
 # Create your models here.
 class Course(models.Model):
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)
 
     SUBJECTS = {
@@ -12,7 +12,7 @@ class Course(models.Model):
         ('math', "MATH")
     }
 
-    subject = models.CharField(choices=SUBJECTS, max_length=200)
+    subject = models.CharField(choices=SUBJECTS, max_length=20)
 
     def __str__(self):
         return self.title + ": " + self.description
@@ -33,6 +33,7 @@ class Teacher(Person):
 class Section(models.Model):
     teacher = models.ForeignKey(Teacher)
     course = models.ForeignKey(Course)
+
     section_id = models.IntegerField()
     description = models.CharField(max_length=200)
 
@@ -48,8 +49,9 @@ class Student(Person):
 
 
 class Assignment(models.Model):
-    title = models.CharField(max_length=200)
     section = models.ForeignKey(Section)
+
+    title = models.CharField(max_length=100)
     description = models.CharField(max_length=200)
     date_time_created = models.DateTimeField(default=timezone.now)
     date_time_due = models.DateTimeField(blank=True, null=True)
@@ -64,7 +66,7 @@ class Assignment(models.Model):
         ('ec', "Extra Credit")
     }
 
-    category = models.CharField(choices=CATEGORIES, max_length=200)
+    category = models.CharField(choices=CATEGORIES, max_length=20)
 
     def __str__(self):
         return "[" + self.get_assignment_category() + "] " + str(self.title) + ": " + str(self.description)
@@ -84,7 +86,6 @@ class Enrollment(models.Model):
 class Grade(models.Model):
     enrollment = models.ForeignKey(Enrollment)
     assignment = models.ForeignKey(Assignment)
-    points = models.FloatField()
 
     ASSIGNMENT_GRADES = (
         ('a+', "A+"), ('a', "A"), ('a-', "A-"),
@@ -94,6 +95,7 @@ class Grade(models.Model):
         ('f', "F")
     )
 
+    points = models.FloatField()
     grade = models.CharField(choices=ASSIGNMENT_GRADES, max_length=3, default="A+")
 
     def __str__(self):
@@ -106,3 +108,10 @@ class Grade(models.Model):
 
     def get_grade(self):
         return dict(self.ASSIGNMENT_GRADES).get(str(self.grade))
+
+
+class Announcement(models.Model):
+    section = models.ForeignKey(Section)
+    title = models.CharField(max_length=50)
+    details = models.TextField(max_length=200)
+    date_time_created = models.DateTimeField(default=timezone.now)
