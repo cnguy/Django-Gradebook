@@ -9,8 +9,8 @@
   <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!--Import materialize.css-->
   <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css"> -->
-  <link rel="stylesheet" type="text/css" href="{% static 'css/materialize.css' %}"/>
-  <link rel="stylesheet" type="text/css" href="{% static 'css/auth_pages.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'gradebook/css/materialize.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'gradebook/css/auth_pages.css' %}"/>
   <!--Let browser know website is optimized for mobile-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 </head>
@@ -20,20 +20,29 @@
   <div class="row">
     <form class="col s8 m6 offset-m4" method="POST">
       <div class="row">
-        <div class="col s8"><h3 id="header">Teacher Portal</h3></div>
-      </div> <!-- TODO: FIX THIS -->
-      {% if invalid %}
-      Your email/password combo does not exist.
-      {% endif %}
+        <div class="col s8"><h3 class="header">Teacher Portal</h3></div>
+      </div>
       <div class="row">
-        <div class="input-field col s8">
-          <input id="username" name="username" type="text" value="" />
-          <label for="username">Username</label>
+        <div class="col s6">
+          {{ form.username.errors }}
         </div>
       </div>
       <div class="row">
         <div class="input-field col s8">
-          <input id="password" name="password" type="password" value="" />
+          {{ form.username }}
+          <label for="username">Username</label>
+        </div>
+      </div>
+      {% if form.password.errors %}
+      <div class="row">
+        <div class="col s6">
+          {{ form.password.errors }}
+        </div>
+      </div>
+      {% endif %}
+      <div class="row">
+        <div class="input-field col s8">
+          {{ form.password }}
           <label for="password">Password</label>
         </div>
       </div>

@@ -1,6 +1,7 @@
 {% extends 'generic_view.html' %}
 
 {% block content %}
+{% load staticfiles %}
 <p>
 <h3>{{ current_section.course.title }}</h3>
 <h5>Section ID: {{ current_section.section_id }}</h5>
@@ -18,11 +19,49 @@
     <div class="collapsible-header"><i class="material-icons">library_books</i>
       <h4>{{ announcements.count }} Announcements</h4></div>
     <div class="collapsible-body">
-      {% for announcement in announcements %}
-      <div class="announcement_header">{{ announcement.title }}</div>
-      <div class="announcement_desc">{{ announcement.details }}</div>
-      {% endfor %}
-    </div>
+      <div style="padding-left: 5px; padding-right: 5px;">
+        <table class="highlight responsive-table">
+          <thead>
+          <tr>
+            <th data-field="headline">Headline</th>
+            <th data-field="details">Description</th>
+            <th data-field="date_time_created">Date&Time Created</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          {% for announcement in announcements %}
+          <tr>
+            <td>{{ announcement.headline }}</td>
+            <td>{{ announcement.details }}</td>
+            <td>{{ announcement.date_time_created }}</td>
+            <td class="table-with-buttons">
+              <a href="{% url 'announcement_edit' announcement.section.pk announcement.pk %}">
+                <button class="btn waves-effect waves-light btn amber darken-3" type="submit" name="action">
+                  Edit
+                  <i class="material-icons right">send</i>
+                </button>
+              </a>
+            </td>
+            <td class="table-with-buttons">
+              <a href="{% url 'announcement_delete' announcement.section.pk announcement.pk %}">
+                <button class="btn waves-effect waves-light btn amber darken-3" type="submit" name="action">
+                  Delete
+                  <i class="material-icons right">send</i>
+                </button>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        <a href="{% url 'announcement_new' current_section.pk %}">
+          <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
+            +
+          </button>
+        </a>
+      </div>
   </li>
 </ul>
 
@@ -52,7 +91,7 @@
             <td>{{ assignment.date_time_due }}</td>
             <td class="table-with-buttons">
               <a href="{% url 'assignment_edit' assignment.section.pk assignment.pk %}">
-                <button class="btn waves-effect waves-light btn" type="submit" name="action">
+                <button class="btn waves-effect waves-light btn amber darken-3" type="submit" name="action">
                   Edit
                   <i class="material-icons right">send</i>
                 </button>
@@ -86,18 +125,20 @@
             <th data-field="student_id">Student ID</th>
             <th data-field="last_name">Last Name</th>
             <th data-field="first_name">First Name</th>
+            <th data-field="grade">Grade</th>
           </tr>
           </thead>
 
           <tbody>
-          {% for enrolled in enrollments %}
+          {% for enrolled, grade in enrollment_and_grades %}
           <tr>
             <td>{{ enrolled.student.student_id }}</td>
             <td>{{ enrolled.student.user.last_name }}</td>
             <td>{{ enrolled.student.user.first_name }}</td>
+            <td>{{ grade }}</td>
             <td class="table-with-buttons">
               <a href="{% url 'grade_list' enrolled.section.pk enrolled.pk %}">
-                <button class="btn waves-effect waves-light btn" type="submit" name="action">
+                <button class="btn waves-effect waves-light btn light-blue darken-3" type="submit" name="action">
                   Grades
                 </button>
               </a>
@@ -108,9 +149,7 @@
               </a>
             </td>
           </tr>
-
           {% endfor %}
-
           </tbody>
         </table>
 
@@ -124,4 +163,112 @@
     </div>
   </li>
 </ul>
+
+<div class="row">
+  <div class="col s6">
+    <ul class="collapsible" data-collapsible="accordion">
+      <li>
+        <div class="collapsible-header"><i class="material-icons">library_books</i>
+          <h4>Summary of Grades</h4>
+        </div>
+        <div class="collapsible-body">
+          <div style="padding-left: 5px; padding-right: 5px; padding-bottom: 5px;">
+            <table class="highlight responsive-table">
+              <thead>
+              <tr>
+                <th data-field="letter_grade">Letter Grade</th>
+                <th data-field="count">Count</th>
+              </tr>
+              </thead>
+
+              <tbody>
+              {% for letter_grade, grade in grade_summary %}
+              <tr>
+                <td>{{ letter_grade }}</td>
+                <td>{{ grade }}</td>
+              </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="col s6">
+    <div id="chart"></div>
+  </div>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script type="text/javascript" charset="utf-8">
+    $(document).ready(function () {
+
+      columnColors = ['#ffab40', '#00b0ff', '00e676', '#bcaaa4', '#616161'];
+
+      function setColumnBarColors(colors, chartContainer) {
+
+        $('#' + chartContainer + ' .c3-chart-bars .c3-shape').each(function (index) {
+          this.style.cssText += 'fill: ' + colors[index] + ' !important; stroke: ' + colors[index] + '; !important';
+        });
+
+        $('#' + chartContainer + ' .c3-chart-texts .c3-text').each(function (index) {
+          this.style.cssText += 'fill: ' + colors[index] + ' !important;';
+        });
+      }
+
+      // Because of my IDE's interaction with Django templating and javascript
+      // I set the variables to the string version of my data.
+      // This makes editing less of a pain (the double curly brackets mess up the IDE's
+      // indenting features.
+      var a = +"{{ a }}";
+      var b = +"{{ b }}";
+      var c = +"{{ c }}";
+      var d = +"{{ d }}";
+      var f = +"{{ f }}";
+      var chart = c3.generate({
+        bindto: '#chart',
+        data: {
+          columns: [
+            ['', a, b, c, d, f]
+          ],
+          type: 'bar',
+          labels: {
+            format: {
+              x: 'categorized'
+              //y: function (v, id) { return "Custom Format: " + id; }
+            }
+          },
+          types: {
+            grades: 'bar'
+          }
+        },
+        axis: {
+          x: {
+            tick: {
+              values: [0, 1, 2, 3, 4]
+            },
+            type: 'category',
+            categories: ['A', 'B', 'C', 'D', 'F']
+          },
+          y: {
+            min: 1,
+            max: 10
+          }
+        },
+        legend: {
+          show: false
+        }
+      });
+
+      setColumnBarColors(columnColors, 'chart');
+
+      // Color turns to original when window is resized
+    // To handle that
+    $(window).resize(function () {
+      setColumnBarColors(columnColors, 'chart');
+    });
+    });
+  </script>
+</div>
+
 {% endblock %}

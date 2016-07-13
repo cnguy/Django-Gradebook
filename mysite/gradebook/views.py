@@ -1,10 +1,13 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, FormView, TemplateView, UpdateView
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from .models import Announcement, Assignment, Course, Enrollment, Grade, Section, Student, Teacher
+from .forms import LoginForm, StudentRegisterForm, TeacherRegisterForm
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseRedirect
 
 
 class HomePageView(TemplateView):
@@ -12,19 +15,33 @@ class HomePageView(TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated():
-            return redirect('secret')
+            try:
+                teacher = Teacher.objects.filter(user=request.user)
+                url = 'section_list'
+            except:
+                raise (ObjectDoesNotExist)
+            try:
+                student = Student.objects.filter(user=request.user)
+                url = 'secret'
+            except:
+                raise (ObjectDoesNotExist)
+            return redirect(url)
         return super(HomePageView, self).dispatch(request, *args, **kwargs)
 
 
-class LoginPageView(TemplateView):
+class LoginPageView(FormView):
     template_name = 'login.html'
+    form_class = LoginForm
+    success_url = ''  # filler
 
     def dispatch(self, request, *args, **kwargs):
         if request.method == 'GET':
             if request.user.is_authenticated():
-                return redirect('/secret/')
-            return super(LoginPageView, self).dispatch(request, *args, {'invalid': True})
+                return redirect('/staff/')
+            return super(LoginPageView, self).dispatch(request, *args, **kwargs)
         else:
+            # user = form.login()
+
             username = request.POST.get('username')
             password = request.POST.get('password')
 
@@ -32,11 +49,27 @@ class LoginPageView(TemplateView):
 
             if user is not None:
                 login(request, user)
-                return redirect('/secret/')
+                url = ''
+                try:
+                    teacher = Teacher.objects.filter(user=user).first()
+                    if teacher is not None:
+                        url = 'section_list'
+                except Teacher.DoesNotExist:
+                    pass
+                try:
+                    student = Student.objects.filter(user=user).first()
+                    if student is not None:
+                        url = 'secret'
+                except Teacher.DoesNotExist:
+                    pass
+
+                return redirect(url)
             else:
-                # TODO: fix invalid message
-                return redirect('/login', {'invalid': True})
+                return super(LoginPageView, self).dispatch(request, *args, **kwargs)
                 # return super(LoginPageView, self).dispatch(request, *args, {'invalid': True})
+
+    def form_valid(self, form):
+        return super(LoginPageView, self).form_valid(form)
 
 
 class LogoutView(TemplateView):
@@ -47,17 +80,18 @@ class LogoutView(TemplateView):
 
 class RegisterPageView(TemplateView):
     template_name = 'register.html'
+    success_url = ''
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated():
-            return redirect('/secret/')
+            return redirect('/staff/')
         return super(RegisterPageView, self).dispatch(request, *args, **kwargs)
 
 
 class RegisterTeacher(TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated():
-            return redirect('/secret/')
+            return redirect('/staff/')
 
         if request.method == 'POST':
             username = request.POST.get('username')
@@ -131,6 +165,7 @@ class SectionIDMixin(object):
     This is for other Classes to inherit so that they can all have the section id needed
     to link back to the previous section's page. I use this for the Create/Update/List forms.
     """
+
     def get_context_data(self, **kwargs):
         context = super(SectionIDMixin, self).get_context_data(**kwargs)
         section_pk = self.kwargs.get('sec')
@@ -142,15 +177,30 @@ class StudentList(ListView):
     model = Student
     template_name = 'student_list.html'
 
+    def get_context_data(self, **kwargs):
+        context = super(StudentList, self).get_context_data(**kwargs)
+        context['title'] = "All Students"
+        return context
+
 
 class TeacherList(ListView):
     model = Teacher
     template_name = 'teacher_list.html'
 
+    def get_context_data(self, **kwargs):
+        context = super(TeacherList, self).get_context_data(**kwargs)
+        context['title'] = "All Teachers"
+        return context
+
 
 class CourseList(ListView):
     model = Course
     template_name = 'course_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CourseList, self).get_context_data(**kwargs)
+        context['title'] = "All Courses"
+        return context
 
 
 class SectionList(LoginRequiredMixin, ListView):
@@ -161,6 +211,38 @@ class SectionList(LoginRequiredMixin, ListView):
     def get_queryset(self):
         teacher = get_object_or_404(Teacher, user=self.request.user)
         return Section.objects.filter(teacher=teacher)
+
+
+class AnnouncementViewMixin(object):
+    model = Announcement
+
+    def get_success_url(self):
+        return reverse_lazy('section',
+                            kwargs={'sec': self.kwargs['sec']})
+
+
+class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMixin, CreateView):
+    fields = ['section', 'headline', 'details', 'date_time_created']
+
+    def get_initial(self):
+        section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
+        return {
+            'section': section
+        }
+
+
+class AnnouncementUpdate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMixin, UpdateView):
+    fields = ['section', 'headline', 'details', 'date_time_created']
+
+    def get_initial(self):
+        section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
+        return {
+            'section': section
+        }
+
+
+class AnnouncementDelete(LoginRequiredMixin, AnnouncementViewMixin, DeleteView):
+    pass
 
 
 class EnrollmentViewMixin(object):
@@ -174,7 +256,26 @@ class EnrollmentViewMixin(object):
 class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, SectionIDMixin, CreateView):
     fields = ['section', 'student']
 
+    def get_form(self, form_class):
+        """
+        Only displays the section to prevent enrolling to other sections.
+        Only displays students not already enrolled to be in the queryset.
+        """
+        form = super(CreateView, self).get_form(form_class)
+        students = Student.objects.all()
+
+        for student in students:
+            enrollment = Enrollment.objects.filter(student=student).first()
+            if enrollment is None:
+                form.fields['student'].queryset.append(student)
+
+        form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs.get('sec'))
+        return form
+
     def get_initial(self):
+        """
+        The section choice is automatically on the correct section.
+        """
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
         return {
             'section': section
@@ -193,13 +294,6 @@ class AssignmentViewMixin(object):
                             kwargs={'sec': self.kwargs['sec']})
 
 
-class AssignmentList(LoginRequiredMixin, AssignmentViewMixin, ListView):
-    def get_queryset(self):
-        teacher = get_object_or_404(Teacher, user=self.request.user)
-        section = get_object_or_404(Section, teacher=teacher)
-        return Assignment.objects.filter(section=section)
-
-
 class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, CreateView):
     fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_time_due']
 
@@ -211,7 +305,6 @@ class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, 
 
 
 class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, UpdateView):
-    model = Assignment
     fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_time_due']
 
     def get_initial(self):
@@ -221,9 +314,15 @@ class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, 
         }
 
 
-class GradeList(SectionIDMixin, ListView):
+class GradeViewMixin(object):
     model = Grade
 
+    def get_success_url(self):
+        return reverse_lazy('section',
+                            kwargs={'sec': self.kwargs['sec']})
+
+
+class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
     def get_queryset(self):
         enrollment = get_object_or_404(Enrollment, id=self.kwargs['pk'], section=self.kwargs['sec'])
         return Grade.objects.filter(enrollment=enrollment)
@@ -253,9 +352,15 @@ class GradeList(SectionIDMixin, ListView):
         hwk_sum_of_points = 0.0
         ec_sum_of_points = 0.0
 
+        # Store assignments that we will filter out
+        # so that we can display the ungraded assignments
+        # in a different fashion.
+        grades_container = []
+
         for grade in grades:
             total_points += grade.assignment.points_possible
             sum_of_points += grade.points
+            grades_container.append(grade.assignment)
 
             # Get category-specific information.
             if grade.assignment.category == 'essay':
@@ -276,19 +381,30 @@ class GradeList(SectionIDMixin, ListView):
             elif grade.assignment.category == 'ec':
                 ec_sum_of_points += grade.points
 
-        context['total_grade_percentage'] = "{0:.0f}%".format(sum_of_points/total_points * 100)
+        # Filter out assignments.
+        assignments = Assignment.objects.filter(section=self.kwargs['sec'])
+        context['assignments'] = []
+
+        for assignment in assignments:
+            if assignment not in grades_container:
+                context['assignments'].append(assignment)
+
+        # Calculate total grade and associated data.
+        if total_points != 0:
+            context['total_grade_percentage'] = "{0:.0f}%".format(sum_of_points / total_points * 100)
         context['total_points'] = total_points
         context['sum_of_points'] = sum_of_points
         context['letter_grade'] = 'A'
 
         # The code chunk below is the logic to display a summary
         # of the grades filtered by categories.
-            # For example:
-            # Essay | 87%
-            # Test  | 50%
-            # and so on..
-        categories = ['Essay', 'Test', 'Quiz', 'Problem Set', 'Homework', 'Extra Credit']
+        # For example:
+        # Essay | 87%
+        # Test  | 50%
+        # and so on..
+        categories = ['Essay', 'Test', 'Quiz', 'Problem Set', 'Homework', 'Extra Credit', 'Total']
         nothing = "Nothing yet."
+
         if essay_total_points == 0:
             essay_info = (categories[0], nothing)
         else:
@@ -337,14 +453,46 @@ class GradeList(SectionIDMixin, ListView):
                 ec_sum_of_points
             )
 
-        context['categories'] = [essay_info, test_info, quiz_info, ps_info, hwk_info, ec_info]
+        if total_points == 0:
+            total_info = (categories[6], nothing)
+        else:
+            total_info = (categories[6], context['total_grade_percentage'])
+
+        context['categories'] = [
+            essay_info,
+            test_info,
+            quiz_info,
+            ps_info,
+            hwk_info,
+            ec_info,
+            total_info
+        ]
 
         return context
 
 
+class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView):
+    fields = ['enrollment', 'assignment', 'points', 'grade']
+
+    def get_form(self, form_class):
+        """Only allows the current enrollment object (or nothing) to be selected."""
+        form = super(CreateView, self).get_form(form_class)
+        form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs.get('pk'))
+        return form
+
+    def get_initial(self):
+        enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('pk'))
+        # form = super(CreateView, self).get_form(form_class)
+        # self.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs.get('pk'))
+        return {
+            'enrollment': enrollment
+        }
+
+
 class SpecificSection(LoginRequiredMixin, TemplateView):
     """
-    A view to display the description, enrollment, and assignments of a specific section.
+    A custom view to display the description, annoucenments, assignments,
+    and enrollments of a specific section.
     """
     template_name = 'gradebook/section.html'
 
@@ -356,4 +504,50 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
         context['announcements'] = Announcement.objects.filter(section=section).order_by('date_time_created')
         context['assignments'] = Assignment.objects.filter(section=section).order_by('date_time_created')
         context['enrollments'] = Enrollment.objects.filter(section=section).order_by('student__user__last_name')
+        enrollments_and_grades = []
+
+        # prototype of bar graph
+        a = 0
+        b = 0
+        c = 0
+        d = 0
+        f = 0
+
+        for enrollment in context['enrollments']:
+            grades = Grade.objects.filter(enrollment=enrollment)
+            points = 0.0
+            possible_points = 0
+            for grade in grades:
+                points += grade.points
+                possible_points += grade.assignment.points_possible
+            if possible_points != 0:  # temp fix
+                percentage = "{0:.0f}".format(points / possible_points * 100)
+            else:
+                percentage = 0
+            float_percentage = float(percentage)
+            letter_grade = 'NULL'
+            if float_percentage > 90:
+                letter_grade = 'A'
+                a += 1
+            elif 80.0 <= float_percentage and float_percentage < 90.0:
+                letter_grade = 'B'
+                b += 1
+            elif 70.0 <= float_percentage and float_percentage < 80.0:
+                letter_grade = 'C'
+                c += 1
+            elif 60.0 <= float_percentage and float_percentage < 70.0:
+                letter_grade = 'D'
+                d += 1
+            else:
+                letter_grade = 'F'
+                f += 1
+
+            enrollments_and_grades.append((enrollment, letter_grade))
+        context['a'] = a
+        context['b'] = b
+        context['c'] = c
+        context['d'] = d
+        context['f'] = f
+        context['enrollment_and_grades'] = enrollments_and_grades
+        context['grade_summary'] = [('A', a), ('B', b), ('C', c), ('D', d), ('F', f)]
         return context

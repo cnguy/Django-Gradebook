@@ -7,7 +7,29 @@
   <button class="btn waves-effect waves-light red" type="button">Back
   </button>
 </a>
+
 <div class="row">
+  <div class="col s3">
+    <table class="highlight responsive-table">
+      <thead>
+      <tr>
+        <th data-field="grade">Category</th>
+        <th data-field="percentage">%</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      {% for a, b in categories %}
+      <tr>
+        <td>{{ a }}</td>
+        <td>{{ b }}</td>
+      </tr>
+      {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
   <div class="col s9">
     <table class="highlight responsive-table">
       <thead>
@@ -32,6 +54,17 @@
         <td></td>
       </tr>
 
+      {% for assignment in assignments %}
+      <tr>
+        <td>{{ assignment.get_assignment_category }}</td>
+        <td>{{ assignment.title }}</td>
+        <td>N</td>
+        <td>0</td>
+        <td>{{ assignment.points_possible }}</td>
+        <td>!</td>
+      </tr>
+      {% endfor %}
+
       {% for grade in grade_list %}
       <tr>
         <td>{{ grade.assignment.get_assignment_category }}</td>
@@ -42,7 +75,7 @@
         <td>{{ grade.get_percent_grade }}</td>
         <td class="table-with-buttons">
           <a href="#">
-            <button class="btn waves-effect waves-light btn" type="submit" name="action">
+            <button class="btn waves-effect waves-light btn amber darken-3" type="submit" name="action">
               Edit
               <i class="material-icons right">send</i>
             </button>
@@ -52,7 +85,7 @@
       {% endfor %}
       </tbody>
     </table>
-    <a href="#">
+    <a href="{% url 'grade_create' current_section_pk enrollment.pk %}">
       <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
         +
       </button>
@@ -60,26 +93,6 @@
   </div>
 
 
-  <div class="col s3">
-    <table class="highlight responsive-table">
-      <thead>
-      <tr>
-        <th data-field="grade">Category</th>
-        <th data-field="percentage">%</th>
-      </tr>
-      </thead>
-
-      <tbody>
-      {% for a, b in categories %}
-      <tr>
-        <td>{{ a }}</td>
-        <td>{{ b }}</td>
-      </tr>
-      {% endfor %}
-
-      </tbody>
-    </table>
-  </div>
 </div>
 
 {% endblock %}

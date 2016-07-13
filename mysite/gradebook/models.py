@@ -112,6 +112,6 @@ class Grade(models.Model):
 
 class Announcement(models.Model):
     section = models.ForeignKey(Section)
-    title = models.CharField(max_length=50)
+    headline = models.CharField(max_length=50)
     details = models.TextField(max_length=200)
     date_time_created = models.DateTimeField(default=timezone.now)
