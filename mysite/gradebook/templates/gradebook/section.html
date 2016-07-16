@@ -20,6 +20,7 @@
       <h4>{{ announcements.count }} Announcements</h4></div>
     <div class="collapsible-body">
       <div style="padding-left: 5px; padding-right: 5px;">
+        {% if announcements|length > 0 %}
         <table class="highlight responsive-table">
           <thead>
           <tr>
@@ -55,6 +56,7 @@
           {% endfor %}
           </tbody>
         </table>
+        {% endif %}
 
         <a href="{% url 'announcement_new' current_section.pk %}">
           <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
@@ -62,6 +64,7 @@
           </button>
         </a>
       </div>
+    </div>
   </li>
 </ul>
 
@@ -72,6 +75,7 @@
     </div>
     <div class="collapsible-body">
       <div style="padding-left: 5px; padding-right: 5px;">
+          {% if assignments|length > 0 %}
         <table class="highlight responsive-table">
           <thead>
           <tr>
@@ -80,6 +84,7 @@
             <th data-field="date_time_created">Date&Time Created</th>
             <th data-field="date_time_due">Date&Time Due</th>
           </tr>
+
           </thead>
 
           <tbody>
@@ -101,6 +106,7 @@
           {% endfor %}
           </tbody>
         </table>
+        {% endif %}
 
         <a href="{% url 'assignment_new' current_section.pk %}">
           <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
@@ -119,6 +125,7 @@
     </div>
     <div class="collapsible-body">
       <div style="padding-left: 5px; padding-right: 5px; padding-bottom: 5px;">
+        {% if enrollments|length > 0 %}
         <table class="highlight responsive-table">
           <thead>
           <tr>
@@ -130,12 +137,22 @@
           </thead>
 
           <tbody>
-          {% for enrolled, grade in enrollment_and_grades %}
+          {% for enrolled, grade, needs_grading in enrollment_and_grades %}
+          {% if needs_grading %}
+          <tr bgcolor="#ffd180">
+            {% else %}
           <tr>
+            {% endif %}
             <td>{{ enrolled.student.student_id }}</td>
             <td>{{ enrolled.student.user.last_name }}</td>
             <td>{{ enrolled.student.user.first_name }}</td>
+            {% if assignments|length == 0%}
+            <td>NO ASSIGNMENTS</td>
+            {% elif not needs_grading %}
             <td>{{ grade }}</td>
+            {% else %}
+            <td>{{ grade }} <em style="color: #616161">*NEEDS GRADING*</em></td>
+            {% endif %}
             <td class="table-with-buttons">
               <a href="{% url 'grade_list' enrolled.section.pk enrolled.pk %}">
                 <button class="btn waves-effect waves-light btn light-blue darken-3" type="submit" name="action">
@@ -152,6 +169,7 @@
           {% endfor %}
           </tbody>
         </table>
+        {% endif %}
 
         <a href="{% url 'enrollment_new' current_section.pk %}">
           <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
@@ -262,11 +280,6 @@
 
       setColumnBarColors(columnColors, 'chart');
 
-      // Color turns to original when window is resized
-    // To handle that
-    $(window).resize(function () {
-      setColumnBarColors(columnColors, 'chart');
-    });
     });
   </script>
 </div>
