@@ -20,12 +20,14 @@ class HomePageView(TemplateView):
         if request.user.is_authenticated():
             try:
                 teacher = Teacher.objects.filter(user=request.user)
-                url = 'section_list'
+                if teacher is not None:
+                    url = 'section_list'
             except Teacher.DoesNotExist:  # Not sure how to do exceptions properly yet.
                 raise ObjectDoesNotExist
             try:
                 student = Student.objects.filter(user=request.user)
-                url = 'secret'
+                if student is not None:
+                    url = 'secret'
             except:
                 raise ObjectDoesNotExist
             return redirect(url)
@@ -54,7 +56,6 @@ class LoginPageView(FormView):
                         url = 'secret'
                 except Student.DoesNotExist:
                     pass
-
                 return redirect(url)
             return super(LoginPageView, self).dispatch(request, *args, **kwargs)
         else:
@@ -84,7 +85,6 @@ class LoginPageView(FormView):
                 return redirect(url)
             else:
                 return super(LoginPageView, self).dispatch(request, *args, **kwargs)
-                # return super(LoginPageView, self).dispatch(request, *args, {'invalid': True})
 
     def form_valid(self, form):
         return super(LoginPageView, self).form_valid(form)
@@ -143,6 +143,7 @@ class RegisterTeacher(TemplateView):
                 user.first_name = first_name
                 user.last_name = last_name
                 user.save()
+
                 teacher = Teacher(user=user)
                 teacher.save()
 
@@ -176,6 +177,7 @@ class RegisterStudent(TemplateView):
             user.first_name = first_name
             user.last_name = last_name
             user.save()
+
             student = Student(user=user, student_id=student_id)
             student.save()
 
@@ -346,7 +348,6 @@ class GradeViewMixin(object):
 
 
 class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
-    # TODO: drug-induced, FIX
     def get_queryset(self):
         enrollment = get_object_or_404(Enrollment, id=self.kwargs['pk'], section=self.kwargs['sec'])
         return Grade.objects.filter(enrollment=enrollment)
@@ -354,27 +355,20 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(GradeList, self).get_context_data(**kwargs)
 
-        sum_of_points = 0
-        total_points = 0.0
-
         enrollment = get_object_or_404(Enrollment, id=self.kwargs['pk'], section=self.kwargs['sec'])
         context['enrollment'] = enrollment
-
         grades = Grade.objects.filter(enrollment=enrollment)
 
-        # Quick Summary of Data by Category
-        essay_total_points = 0
-        test_total_points = 0
-        quiz_total_points = 0
-        ps_total_points = 0
-        hwk_total_points = 0
+        # Quick summary of total points earned and total points possible.
+        points_earned = {
+            'essay': 0.0, 'test': 0.0, 'quiz': 0.0,
+            'ps': 0.0, 'hwk': 0.0, 'ec': 0.0
+        }
 
-        essay_sum_of_points = 0.0
-        test_sum_of_points = 0.0
-        quiz_sum_of_points = 0.0
-        ps_sum_of_points = 0.0
-        hwk_sum_of_points = 0.0
-        ec_sum_of_points = 0.0
+        points_possible = {
+            'essay': 0, 'test': 0, 'quiz': 0,
+            'ps': 0, 'hwk': 0, 'ec': 0
+        }
 
         # Store assignments that we will filter out
         # so that we can display the ungraded assignments
@@ -382,28 +376,10 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         grades_container = []
 
         for grade in grades:
-            total_points += grade.assignment.points_possible
-            sum_of_points += grade.points
             grades_container.append(grade.assignment)
 
-            # Get category-specific information.
-            if grade.assignment.category == 'essay':
-                essay_total_points += grade.assignment.points_possible
-                essay_sum_of_points += grade.points
-            elif grade.assignment.category == 'test':
-                test_total_points += grade.assignment.points_possible
-                test_sum_of_points += grade.points
-            elif grade.assignment.category == 'quiz':
-                quiz_total_points += grade.assignment.points_possible
-                quiz_sum_of_points += grade.points
-            elif grade.assignment.category == 'ps':
-                ps_total_points += grade.assignment.points_possible
-                ps_sum_of_points += grade.points
-            elif grade.assignment.category == 'hwk':
-                hwk_total_points += grade.assignment.points_possible
-                hwk_sum_of_points += grade.points
-            elif grade.assignment.category == 'ec':
-                ec_sum_of_points += grade.points
+            points_possible[grade.assignment.category] += grade.assignment.points_possible
+            points_earned[grade.assignment.category] += grade.points
 
         # Filter out assignments.
         assignments = Assignment.objects.filter(section=self.kwargs['sec'])
@@ -413,12 +389,13 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
             if assignment not in grades_container:
                 context['ungraded_assignments'].append(assignment)
 
-        # Calculate total grade and associated data.
-        if total_points != 0:
-            context['total_grade_percentage'] = to_percent(sum_of_points, total_points)
-        context['total_points'] = total_points
-        context['sum_of_points'] = sum_of_points
-        context['letter_grade'] = 'A'
+        # Calculate total grade and other related data.
+        context['points_earned'] = sum(points_earned.values())
+        context['points_possible'] = sum(points_possible.values())
+        if context['points_possible'] != 0:
+            context['total_points_percentage'] = to_percent(
+                context['points_earned'], context['points_possible']
+            )
 
         # The code chunk below is the logic to display a summary
         # of the grades filtered by categories.
@@ -426,31 +403,15 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         # Essay | 87%
         # Test  | 50%
         # and so on..
-        categories = ['Essay', 'Test', 'Quiz', 'Problem Set', 'Homework', 'Extra Credit', 'Total']
+        categories = Assignment.CATEGORIES
         nothing_msg = "Nothing yet."
+        info_by_category = []
+        for category in points_earned:
+            readable_category = dict(categories).get(str(category))
+            info_by_category.append((readable_category, nothing_msg)) if points_possible[category] == 0 else \
+                info_by_category.append((readable_category, to_percent(points_earned[category], points_possible[category])))
 
-        essay_info = (categories[0], nothing_msg) if essay_total_points == 0 else \
-            (categories[0], to_percent(essay_sum_of_points, essay_total_points))
-        test_info = (categories[1], nothing_msg) if test_total_points == 0 else \
-            (categories[1], to_percent(test_sum_of_points, test_total_points))
-        quiz_info = (categories[2], nothing_msg) if quiz_total_points == 0 else \
-            (categories[2], to_percent(quiz_sum_of_points, quiz_total_points))
-        ps_info = (categories[3], nothing_msg) if ps_total_points == 0 else \
-            (categories[3], to_percent(ps_sum_of_points, ps_total_points))
-        hwk_info = (categories[4], nothing_msg) if hwk_total_points == 0 else \
-            (categories[4], to_percent(hwk_sum_of_points, hwk_total_points))
-        ec_info = (categories[5], nothing_msg) if ec_sum_of_points == 0 else \
-            (categories[5], ec_sum_of_points)
-
-        total_info = (categories[6], nothing_msg) if total_points == 0 else \
-            (categories[6], context['total_grade_percentage'])
-
-        context['categories'] = [
-            essay_info, test_info, quiz_info,
-            ps_info, hwk_info,
-            ec_info,
-            total_info
-        ]
+        context['categories_info'] = info_by_category
 
         return context
 
@@ -541,6 +502,8 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
                 letter_grade = 'F'
                 f += 1
 
+            # If the number of grades objects is not the same as the number of assignment
+            # objects, that means not everything is graded.
             needs_grading = True if len(grades) != len(context['assignments']) else False
 
             enrollments_and_grades.append((enrollment, letter_grade, needs_grading))

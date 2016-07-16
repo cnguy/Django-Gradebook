@@ -19,7 +19,7 @@
       </thead>
 
       <tbody>
-      {% for a, b in categories %}
+      {% for a, b in categories_info %}
       <tr>
         <td>{{ a }}</td>
         <td>{{ b }}</td>
@@ -48,8 +48,8 @@
         <td></td>
         <td>Total</td>
         <td>{{ letter_grade }}</td>
-        <td>{{ sum_of_points }}</td>
-        <td>{{ total_points }}</td>
+        <td>{{ points_earned }}</td>
+        <td>{{ points_possible }}</td>
         <td>{{ total_grade_percentage }}</td>
         <td></td>
       </tr>

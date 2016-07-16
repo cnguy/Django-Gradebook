@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from .utils import *
 
 # Create your models here.
 class Course(models.Model):
@@ -102,9 +102,7 @@ class Grade(models.Model):
         return super().__str__() + str(self.assignment) + " - " + str(self.grade)
 
     def get_percent_grade(self):
-        # "{0:.0f}%".format(1./3 * 100)
-        # return str(self.points / self.assignment.points_possible)
-        return "{0:.0f}%".format(self.points/self.assignment.points_possible * 100)
+        return to_percent(self.points, self.assignment.points_possible)
 
     def get_grade(self):
         return dict(self.ASSIGNMENT_GRADES).get(str(self.grade))
