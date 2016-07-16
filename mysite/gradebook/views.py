@@ -521,7 +521,7 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
                 points += grade.points
                 possible_points += grade.assignment.points_possible
 
-            percentage = to_percent(points, possible_points) if possible_points != 0 else 0
+            percentage = to_percent(points, possible_points)[:-1] if possible_points != 0 else 0
             float_percentage = float(percentage)
             letter_grade = 'NULL'
 
