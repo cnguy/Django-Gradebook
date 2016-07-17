@@ -353,7 +353,6 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(GradeList, self).get_context_data(**kwargs)
-
         enrollment = get_object_or_404(Enrollment, id=self.kwargs['pk'], section=self.kwargs['sec'])
         context['enrollment'] = enrollment
         grades = Grade.objects.filter(enrollment=enrollment)
@@ -380,11 +379,11 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
 
         # Grab all the ungraded assignments.
         assignments = Assignment.objects.filter(section=self.kwargs['sec'])
-        context['ungraded_assignments'] = []
+        context['non_graded_assignments'] = []
 
         for assignment in assignments:
             if assignment not in graded_assignments:
-                context['ungraded_assignments'].append(assignment)
+                context['non_graded_assignments'].append(assignment)
             points_possible[assignment.category] += assignment.points_possible
 
         # Calculate total grade and other related data.
@@ -434,20 +433,13 @@ class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView
         grades = Grade.objects.filter(enrollment=self.kwargs.get('enr'))
         assignments = Assignment.objects.filter(section=self.kwargs.get('sec'))
 
-        graded_assignments = []
-
-        for grade in grades:
-            graded_assignments.append(grade.assignment)
-
-        non_graded_assignments = []
-
-        for assignment in assignments:
-            if assignment not in graded_assignments:
-                non_graded_assignments.append(assignment.pk)
+        graded_assignments = [grade.assignment for grade in grades]
+        pks_of_non_graded_assignments = \
+            [assignment.pk for assignment in assignments if assignment not in graded_assignments]
 
         form.fields['assignment'].queryset = Assignment.objects.filter(
             section=self.kwargs.get('sec'),
-            pk__in=non_graded_assignments
+            pk__in=pks_of_non_graded_assignments
         )
 
         return form
@@ -477,23 +469,18 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
     template_name = 'gradebook/section.html'
 
     def get_context_data(self, **kwargs):
+        context = super(SpecificSection, self).get_context_data(**kwargs)
         teacher = get_object_or_404(Teacher, user=self.request.user)
         section = get_object_or_404(Section, teacher=teacher, pk=self.kwargs['sec'])
-        context = super(SpecificSection, self).get_context_data(**kwargs)
         context['current_section'] = section
         context['announcements'] = Announcement.objects.filter(section=section).order_by('date_time_created')
         context['assignments'] = Assignment.objects.filter(section=section).order_by('date_time_created')
         context['enrollments'] = Enrollment.objects.filter(section=section).order_by('student__user__last_name')
+
         enrollments_and_grades = []
 
         # Number of a's, number of b's, etc.
-        num_of_letter_grades = {
-            'A': 0,
-            'B': 0,
-            'C': 0,
-            'D': 0,
-            'F': 0
-        }
+        num_of_letter_grades = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0}
 
         # Calculate current letter grades.
         for enrollment in context['enrollments']:
@@ -519,9 +506,6 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
             enrollments_and_grades.append((enrollment, letter_grade, needs_grading))
 
         context['enrollment_and_grades'] = enrollments_and_grades
-
-        context['grade_summary'] = []
-        for grade in num_of_letter_grades:
-            context['grade_summary'].append((grade, num_of_letter_grades[grade]))
+        context['grade_summary'] = [(grade, num_of_letter_grades[grade]) for grade in num_of_letter_grades]
 
         return context
