@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from .utils import *
 
-# Create your models here.
+
 class Course(models.Model):
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)

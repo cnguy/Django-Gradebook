@@ -417,8 +417,6 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
 
 
 class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView):
-    # TODO: Try to see if you can make grade create select a specific assignment
-    # similar to how GradeEdit automatically does.
     fields = ['enrollment', 'assignment', 'points', 'grade']
 
     def get_form(self, form_class):
@@ -448,6 +446,26 @@ class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView
     def get_initial(self):
         enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('enr'))
         return {'enrollment': enrollment}
+
+
+class GradeCreateOffAssignment(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView):
+    """
+    This custom view is for when the instructor wishes to grade a
+    specific assignment on a specific student's page.
+    """
+    template_name = 'gradebook/grade_form.html'
+    fields = ['enrollment', 'assignment', 'points', 'grade']
+
+    def get_form(self, form_class):
+        form = super(CreateView, self).get_form(form_class)
+        form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs.get('enr'))
+        form.fields['assignment'].queryset = Assignment.objects.filter(pk=self.kwargs.get('pk'))
+        return form
+
+    def get_initial(self):
+        assignment = get_object_or_404(Assignment, pk=self.kwargs.get('pk'))
+        enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('enr'))
+        return {'assignment': assignment, 'enrollment': enrollment}
 
 
 class GradeEdit(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, UpdateView):
@@ -508,5 +526,5 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
 
         context['enrollment_and_grades'] = enrollments_and_grades
         context['grade_summary'] = [(grade, num_of_letter_grades[grade]) for grade in sorted(num_of_letter_grades.keys())]
-        
+
         return context
