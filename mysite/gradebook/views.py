@@ -519,12 +519,9 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
             enrollments_and_grades.append((enrollment, letter_grade, needs_grading))
 
         context['enrollment_and_grades'] = enrollments_and_grades
-        context['grade_summary'] = [
-            ('A', num_of_letter_grades['A']),
-            ('B', num_of_letter_grades['B']),
-            ('C', num_of_letter_grades['C']),
-            ('D', num_of_letter_grades['D']),
-            ('F', num_of_letter_grades['F'])
-        ]
+
+        context['grade_summary'] = []
+        for grade in num_of_letter_grades:
+            context['grade_summary'].append((grade, num_of_letter_grades[grade]))
 
         return context
