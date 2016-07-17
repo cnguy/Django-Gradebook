@@ -22,7 +22,7 @@ urlpatterns = [
     url(r'^staff/(?P<sec>\d+)/enrollments/(?P<pk>\d+)/delete/$', views.EnrollmentDelete.as_view(), name='enrollment_delete'),
     url(r'^staff/(?P<sec>\d+)/assignments/add/$', views.AssignmentCreate.as_view(), name='assignment_new'),
     url(r'^staff/(?P<sec>\d+)/enrollments/(?P<pk>\d+)/grades/$', views.GradeList.as_view(), name='grade_list'),
-    url(r'^staff/(?P<sec>\d+)/enrollments/(?P<pk>\d+)/grades/add/$', views.GradeCreate.as_view(), name='grade_new'),
-    url(r'^staff/(?P<sec>\d+)/enrollments/(?P<pk>\d+)/grades/edit/$', views.GradeDelete.as_view(), name='grade_edit'),
-    url(r'^staff/(?P<sec>\d+)/enrollments/(?P<pk>\d+)/grades/delete/$', views.GradeDelete.as_view(), name='grade_delete'),
+    url(r'^staff/(?P<sec>\d+)/enrollments/(?P<enr>\d+)/grades/add/$', views.GradeCreate.as_view(), name='grade_new'),
+    url(r'^staff/(?P<sec>\d+)/enrollments/(?P<enr>\d+)/grades/(?P<pk>\d+)/edit/$', views.GradeDelete.as_view(), name='grade_edit'),
+    url(r'^staff/(?P<sec>\d+)/enrollments/(?P<enr>\d+)/grades/(?P<pk>\d+)/delete/$', views.GradeDelete.as_view(), name='grade_delete'),
 ]

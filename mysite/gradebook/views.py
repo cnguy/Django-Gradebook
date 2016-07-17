@@ -7,8 +7,8 @@ from django.contrib.auth.models import User
 from .models import Announcement, Assignment, Course, Enrollment, Grade, Section, Student, Teacher
 from .forms import LoginForm
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponseRedirect
 from .utils import *
+
 
 # TODO: Clean up this drug-induced code.
 
@@ -35,6 +35,7 @@ class HomePageView(TemplateView):
 
 
 class LoginPageView(FormView):
+    # TODO: FIX CSRF
     template_name = 'login.html'
     form_class = LoginForm
     success_url = ''  # filler
@@ -159,6 +160,7 @@ class RegisterTeacher(TemplateView):
 
 
 class RegisterStudent(TemplateView):
+    # TODO: FIX CSRF
     def dispatch(self, request, *args, **kwargs):
         username = request.POST.get('username2')
         password = request.POST.get('password2')
@@ -264,7 +266,7 @@ class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMix
 
     def get_initial(self):
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
-        return { 'section': section }
+        return {'section': section}
 
 
 class AnnouncementUpdate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMixin, UpdateView):
@@ -272,7 +274,7 @@ class AnnouncementUpdate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMix
 
     def get_initial(self):
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
-        return { 'section': section }
+        return {'section': section}
 
 
 class AnnouncementDelete(LoginRequiredMixin, AnnouncementViewMixin, DeleteView):
@@ -310,7 +312,7 @@ class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, SectionIDMixin, 
         The correct section is already selected.
         """
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
-        return { 'section': section }
+        return {'section': section}
 
 
 class EnrollmentDelete(LoginRequiredMixin, EnrollmentViewMixin, DeleteView):
@@ -329,7 +331,7 @@ class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, 
 
     def get_initial(self):
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
-        return { 'section': section }
+        return {'section': section}
 
 
 class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, UpdateView):
@@ -337,7 +339,7 @@ class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, 
 
     def get_initial(self):
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
-        return { 'section': section }
+        return {'section': section}
 
 
 class GradeViewMixin(object):
@@ -373,18 +375,18 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         # Store assignments that we will filter out
         # so that we can display the ungraded assignments
         # in a different fashion.
-        grades_container = []
+        graded_assignments = []
 
         for grade in grades:
-            grades_container.append(grade.assignment)
+            graded_assignments.append(grade.assignment)
             points_earned[grade.assignment.category] += grade.points
 
-        # Filter out assignments.
+        # Grab all the ungraded assignments.
         assignments = Assignment.objects.filter(section=self.kwargs['sec'])
         context['ungraded_assignments'] = []
 
         for assignment in assignments:
-            if assignment not in grades_container:
+            if assignment not in graded_assignments:
                 context['ungraded_assignments'].append(assignment)
             points_possible[assignment.category] += assignment.points_possible
 
@@ -393,7 +395,7 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         context['points_possible'] = sum(points_possible.values())
         context['total_grade_percentage'] = to_percent(
             context['points_earned'], context['points_possible']
-        ) if context['points_possible'] != 0 else '0.0%'
+        ) if context['points_possible'] != 0 else '0%'  # In case if there are no assignments.
         context['final_letter_grade'] = get_letter_grade(float(context['total_grade_percentage'][:-1]))
 
         # The code chunk below is the logic to display a summary
@@ -405,17 +407,21 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         categories = Assignment.CATEGORIES
         nothing_msg = "Nothing yet."
         info_by_category = []
+
         for category in points_earned:
             readable_category = dict(categories).get(str(category))
             info_by_category.append((readable_category, nothing_msg)) if points_possible[category] == 0 else \
-                info_by_category.append((readable_category, to_percent(points_earned[category], points_possible[category])))
+                info_by_category.append(
+                    (readable_category, to_percent(points_earned[category], points_possible[category])))
 
-        context['categories_info'] = info_by_category
+        context['info_by_category'] = info_by_category
 
         return context
 
 
 class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView):
+    # TODO: Try to see if you can make grade create select a specific assignment
+    # similar to how GradeEdit automatically does.
     fields = ['enrollment', 'assignment', 'points', 'grade']
 
     def get_form(self, form_class):
@@ -424,13 +430,34 @@ class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView
         the user that was selected to be in the field choices..
         """
         form = super(CreateView, self).get_form(form_class)
-        form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs.get('pk'))
-        form.fields['assignment'].queryset = Assignment.objects.filter(section=self.kwargs.get('sec'))
+        form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs.get('enr'))
+
+        # Don't allow assignments that are already graded for the enrolled to show up
+        # in the choices.
+        grades = Grade.objects.filter(enrollment=self.kwargs.get('enr'))
+        assignments = Assignment.objects.filter(section=self.kwargs.get('sec'))
+
+        graded_assignments = []
+
+        for grade in grades:
+            graded_assignments.append(grade.assignment)
+
+        non_graded_assignments = []
+
+        for assignment in assignments:
+            if assignment not in graded_assignments:
+                non_graded_assignments.append(assignment.pk)
+
+        form.fields['assignment'].queryset = Assignment.objects.filter(
+            section=self.kwargs.get('sec'),
+            pk__in=non_graded_assignments
+        )
+
         return form
 
     def get_initial(self):
-        enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('pk'))
-        return { 'enrollment': enrollment }
+        enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('enr'))
+        return {'enrollment': enrollment}
 
 
 class GradeEdit(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, UpdateView):
@@ -438,7 +465,7 @@ class GradeEdit(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, UpdateView):
 
     def get_initial(self):
         enrollment = get_object_or_404(Section, pk=self.kwargs.get('pk'))
-        return { 'enrollment': enrollment }
+        return {'enrollment': enrollment}
 
 
 class GradeDelete(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, DeleteView):
@@ -474,14 +501,16 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
         # Calculate current letter grades.
         for enrollment in context['enrollments']:
             grades = Grade.objects.filter(enrollment=enrollment)
-            points = 0.0
-            possible_points = 0
+            points_earned = 0.0
+            points_possible = 0
 
             for grade in grades:
-                points += grade.points
-                possible_points += grade.assignment.points_possible
+                points_earned += grade.points
 
-            percentage = to_percent(points, possible_points)[:-1] if possible_points != 0 else 0
+            for assignment in context['assignments']:
+                points_possible += assignment.points_possible
+
+            percentage = to_percent(points_earned, points_possible)[:-1] if points_possible != 0 else 0
             float_percentage = float(percentage)
             letter_grade = 'NULL'
 
@@ -514,4 +543,5 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
         context['f'] = f
         context['enrollment_and_grades'] = enrollments_and_grades
         context['grade_summary'] = [('A', a), ('B', b), ('C', c), ('D', d), ('F', f)]
+
         return context
