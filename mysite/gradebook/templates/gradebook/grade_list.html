@@ -61,7 +61,8 @@
         <td>N</td>
         <td>0</td>
         <td>{{ assignment.points_possible }}</td>
-        <td>
+        <td></td>
+        <td class="table-with-buttons">
           <a href="{% url 'grade_new' current_section_pk enrollment.pk %}">
             <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
               Grade

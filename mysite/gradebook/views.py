@@ -371,10 +371,10 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         # Store assignments that we will filter out
         # so that we can display the ungraded assignments
         # in a different fashion.
-        graded_assignments = []
+        # Not sure if it's better to combine them like I normally do or have it separate.
+        graded_assignments = [grade.assignment for grade in grades]
 
         for grade in grades:
-            graded_assignments.append(grade.assignment)
             points_earned[grade.assignment.category] += grade.points
 
         # Grab all the ungraded assignments.
@@ -400,15 +400,16 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         # Essay | 87%
         # Test  | 50%
         # and so on..
-        categories = Assignment.CATEGORIES
         nothing_msg = "Nothing yet."
-        info_by_category = []
 
-        for category in points_earned:
-            readable_category = dict(categories).get(str(category))
-            info_by_category.append((readable_category, nothing_msg)) if points_possible[category] == 0 else \
-                info_by_category.append(
-                    (readable_category, to_percent(points_earned[category], points_possible[category])))
+        def convert(category):
+            """Grabs the readable version of the category."""
+            return dict(assignment.CATEGORIES).get(str(category))
+
+        info_by_category = \
+            [(convert(category), nothing_msg) if points_possible[category] == 0
+             else (convert(category), to_percent(points_earned[category], points_possible[category]))
+             for category in points_earned]
 
         context['info_by_category'] = info_by_category
 
@@ -506,6 +507,6 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
             enrollments_and_grades.append((enrollment, letter_grade, needs_grading))
 
         context['enrollment_and_grades'] = enrollments_and_grades
-        context['grade_summary'] = [(grade, num_of_letter_grades[grade]) for grade in num_of_letter_grades]
-
+        context['grade_summary'] = [(grade, num_of_letter_grades[grade]) for grade in sorted(num_of_letter_grades.keys())]
+        
         return context
