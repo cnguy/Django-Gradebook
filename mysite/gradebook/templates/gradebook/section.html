@@ -238,11 +238,11 @@
       // I set the variables to the string version of my data.
       // This makes editing less of a pain (the double curly brackets mess up the IDE's
       // indenting features.
-      var a = +"{{ a }}";
-      var b = +"{{ b }}";
-      var c = +"{{ c }}";
-      var d = +"{{ d }}";
-      var f = +"{{ f }}";
+      var a = +"{{ grade_summary.0.1 }}";
+      var b = +"{{ grade_summary.1.1 }}";
+      var c = +"{{ grade_summary.2.1 }}";
+      var d = +"{{ grade_summary.3.1 }}";
+      var f = +"{{ grade_summary.4.1 }}";
       var chart = c3.generate({
         bindto: '#chart',
         data: {

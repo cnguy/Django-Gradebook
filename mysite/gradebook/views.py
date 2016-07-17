@@ -10,9 +10,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from .utils import *
 
 
-# TODO: Clean up this drug-induced code.
-
-
 class HomePageView(TemplateView):
     template_name = 'index.html'
 
@@ -477,8 +474,6 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
     A custom view to display the description, annoucenments, assignments,
     and enrollments of a specific section.
     """
-    # TODO: drug-induced, FIX
-
     template_name = 'gradebook/section.html'
 
     def get_context_data(self, **kwargs):
@@ -492,11 +487,13 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
         enrollments_and_grades = []
 
         # Number of a's, number of b's, etc.
-        a = 0
-        b = 0
-        c = 0
-        d = 0
-        f = 0
+        num_of_letter_grades = {
+            'A': 0,
+            'B': 0,
+            'C': 0,
+            'D': 0,
+            'F': 0
+        }
 
         # Calculate current letter grades.
         for enrollment in context['enrollments']:
@@ -512,23 +509,8 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
 
             percentage = to_percent(points_earned, points_possible)[:-1] if points_possible != 0 else 0
             float_percentage = float(percentage)
-            letter_grade = 'NULL'
-
-            if float_percentage > 90:
-                letter_grade = 'A'
-                a += 1
-            elif 80.0 <= float_percentage < 90.0:
-                letter_grade = 'B'
-                b += 1
-            elif 70.0 <= float_percentage < 80.0:
-                letter_grade = 'C'
-                c += 1
-            elif 60.0 <= float_percentage < 70.0:
-                letter_grade = 'D'
-                d += 1
-            elif float_percentage < 60.0:
-                letter_grade = 'F'
-                f += 1
+            letter_grade = get_letter_grade(float_percentage)
+            num_of_letter_grades[letter_grade] += 1
 
             # If the number of grades objects is not the same as the number of assignment
             # objects, that means not everything is graded.
@@ -536,12 +518,13 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
 
             enrollments_and_grades.append((enrollment, letter_grade, needs_grading))
 
-        context['a'] = a
-        context['b'] = b
-        context['c'] = c
-        context['d'] = d
-        context['f'] = f
         context['enrollment_and_grades'] = enrollments_and_grades
-        context['grade_summary'] = [('A', a), ('B', b), ('C', c), ('D', d), ('F', f)]
+        context['grade_summary'] = [
+            ('A', num_of_letter_grades['A']),
+            ('B', num_of_letter_grades['B']),
+            ('C', num_of_letter_grades['C']),
+            ('D', num_of_letter_grades['D']),
+            ('F', num_of_letter_grades['F'])
+        ]
 
         return context
