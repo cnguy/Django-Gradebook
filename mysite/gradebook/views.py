@@ -377,8 +377,6 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
 
         for grade in grades:
             grades_container.append(grade.assignment)
-
-            points_possible[grade.assignment.category] += grade.assignment.points_possible
             points_earned[grade.assignment.category] += grade.points
 
         # Filter out assignments.
@@ -388,14 +386,15 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         for assignment in assignments:
             if assignment not in grades_container:
                 context['ungraded_assignments'].append(assignment)
+            points_possible[assignment.category] += assignment.points_possible
 
         # Calculate total grade and other related data.
         context['points_earned'] = sum(points_earned.values())
         context['points_possible'] = sum(points_possible.values())
-        if context['points_possible'] != 0:
-            context['total_points_percentage'] = to_percent(
-                context['points_earned'], context['points_possible']
-            )
+        context['total_grade_percentage'] = to_percent(
+            context['points_earned'], context['points_possible']
+        ) if context['points_possible'] != 0 else '0.0%'
+        context['final_letter_grade'] = get_letter_grade(float(context['total_grade_percentage'][:-1]))
 
         # The code chunk below is the logic to display a summary
         # of the grades filtered by categories.
