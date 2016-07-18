@@ -46,7 +46,7 @@
             </td>
             <td class="table-with-buttons">
               <a href="{% url 'announcement_delete' announcement.section.pk announcement.pk %}">
-                <button class="btn waves-effect waves-light btn amber darken-3" type="submit" name="action">
+                <button class="btn waves-effect waves-light btn red" type="submit" name="action">
                   Delete
                   <i class="material-icons right">send</i>
                 </button>
@@ -98,7 +98,11 @@
               <a href="{% url 'assignment_edit' assignment.section.pk assignment.pk %}">
                 <button class="btn waves-effect waves-light btn amber darken-3" type="submit" name="action">
                   Edit
-                  <i class="material-icons right">send</i>
+                </button>
+              </a>
+              <a href="{% url 'assignment_stats' assignment.section.pk assignment.pk %}">
+                <button class="btn waves-effect waves-light btn blue" type="submit" name="action">
+                  Stats
                 </button>
               </a>
             </td>
@@ -253,7 +257,6 @@
           labels: {
             format: {
               x: 'categorized'
-              //y: function (v, id) { return "Custom Format: " + id; }
             }
           },
           types: {

@@ -8,7 +8,7 @@ from .models import Announcement, Assignment, Course, Enrollment, Grade, Section
 from .forms import LoginForm
 from django.core.exceptions import ObjectDoesNotExist
 from .utils import *
-
+from django.db.models import Max
 
 class HomePageView(TemplateView):
     template_name = 'index.html'
@@ -35,7 +35,7 @@ class LoginPageView(FormView):
     # TODO: FIX CSRF
     template_name = 'login.html'
     form_class = LoginForm
-    success_url = ''  # filler
+    success_url = ''
 
     def dispatch(self, request, *args, **kwargs):
         if request.method == 'GET':
@@ -258,7 +258,7 @@ class AnnouncementViewMixin(object):
         return reverse_lazy('section', kwargs={'sec': self.kwargs['sec']})
 
 
-class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMixin, CreateView):
+class AnnouncementFormMixin(object):
     fields = ['section', 'headline', 'details', 'date_time_created']
 
     def get_initial(self):
@@ -266,12 +266,18 @@ class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMix
         return {'section': section}
 
 
-class AnnouncementUpdate(LoginRequiredMixin, AnnouncementViewMixin, SectionIDMixin, UpdateView):
-    fields = ['section', 'headline', 'details', 'date_time_created']
+class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, AnnouncementFormMixin, SectionIDMixin, CreateView):
+    def get_form(self, form_class):
+        form = super(CreateView, self).get_form(form_class)
+        form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs.get('sec'))
+        return form
 
-    def get_initial(self):
-        section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
-        return {'section': section}
+
+class AnnouncementUpdate(LoginRequiredMixin, AnnouncementViewMixin, AnnouncementFormMixin, SectionIDMixin, UpdateView):
+    def get_form(self, form_class):
+        form = super(UpdateView, self).get_form(form_class)
+        form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs.get('sec'))
+        return form
 
 
 class AnnouncementDelete(LoginRequiredMixin, AnnouncementViewMixin, DeleteView):
@@ -295,19 +301,18 @@ class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, SectionIDMixin, 
         """
         form = super(CreateView, self).get_form(form_class)
         students = Student.objects.all()
-
+        pks_of_students_not_enrolled = []
         for student in students:
             enrollment = Enrollment.objects.filter(student=student).first()
             if enrollment is None:
-                form.fields['student'].queryset.append(student)
+                pks_of_students_not_enrolled.append(student)
 
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs.get('sec'))
+        form.fields['student'].queryset = Student.objects.filter(pk__in=pks_of_students_not_enrolled)
+
         return form
 
     def get_initial(self):
-        """
-        The correct section is already selected.
-        """
         section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
         return {'section': section}
 
@@ -323,7 +328,7 @@ class AssignmentViewMixin(object):
         return reverse_lazy('section', kwargs={'sec': self.kwargs['sec']})
 
 
-class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, CreateView):
+class AssignmentFormMixin(object):
     fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_time_due']
 
     def get_initial(self):
@@ -331,19 +336,46 @@ class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, 
         return {'section': section}
 
 
-class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, SectionIDMixin, UpdateView):
-    fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_time_due']
+class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMixin, SectionIDMixin, CreateView):
+    def get_form(self, form_class):
+        form = super(CreateView, self).get_form(form_class)
+        form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs.get('sec'))
+        return form
 
-    def get_initial(self):
-        section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
-        return {'section': section}
+
+class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMixin, SectionIDMixin, UpdateView):
+    def get_form(self, form_class):
+        form = super(UpdateView, self).get_form(form_class)
+        form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs.get('sec'))
+        return form
+
+
+class AssignmentDelete(LoginRequiredMixin, AssignmentViewMixin, DeleteView):
+    pass  # TODO;
 
 
 class GradeViewMixin(object):
     model = Grade
 
     def get_success_url(self):
-        return reverse_lazy('section', kwargs={'sec': self.kwargs['sec']})
+        return reverse_lazy(
+            'grade_list',
+            kwargs={'sec': self.kwargs['sec'], 'pk': self.kwargs['pk']}
+        )
+
+
+class GradeFormMixin(object):
+    fields = ['enrollment', 'assignment', 'points', 'letter_grade']
+
+    def get_initial(self):
+        enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('enr'))
+        return {'enrollment': enrollment}
+
+    def get_context_data(self, **kwargs):
+        context = super(GradeFormMixin, self).get_context_data(**kwargs)
+        enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('enr'))
+        context['enrollment'] = enrollment
+        return context
 
 
 class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
@@ -358,15 +390,8 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         grades = Grade.objects.filter(enrollment=enrollment)
 
         # Quick summary of total points earned and total points possible.
-        points_earned = {
-            'essay': 0.0, 'test': 0.0, 'quiz': 0.0,
-            'ps': 0.0, 'hwk': 0.0, 'ec': 0.0
-        }
-
-        points_possible = {
-            'essay': 0, 'test': 0, 'quiz': 0,
-            'ps': 0, 'hwk': 0, 'ec': 0
-        }
+        points_earned = {'essay': 0.0, 'test': 0.0, 'quiz': 0.0, 'ps': 0.0, 'hwk': 0.0, 'ec': 0.0}
+        points_possible = {'essay': 0, 'test': 0, 'quiz': 0, 'ps': 0, 'hwk': 0, 'ec': 0}
 
         # Store assignments that we will filter out
         # so that we can display the ungraded assignments
@@ -416,8 +441,8 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
         return context
 
 
-class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView):
-    fields = ['enrollment', 'assignment', 'points', 'grade']
+class GradeCreate(LoginRequiredMixin, GradeViewMixin, GradeFormMixin, SectionIDMixin, CreateView):
+    fields = ['enrollment', 'assignment', 'points', 'letter_grade']
 
     def get_form(self, form_class):
         """
@@ -443,37 +468,45 @@ class GradeCreate(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView
 
         return form
 
-    def get_initial(self):
-        enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('enr'))
-        return {'enrollment': enrollment}
 
-
-class GradeCreateOffAssignment(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, CreateView):
+class GradeCreateOffAssignment(LoginRequiredMixin, GradeViewMixin, GradeFormMixin, SectionIDMixin, CreateView):
     """
     This custom view is for when the instructor wishes to grade a
     specific assignment on a specific student's page.
     """
     template_name = 'gradebook/grade_form.html'
-    fields = ['enrollment', 'assignment', 'points', 'grade']
 
     def get_form(self, form_class):
         form = super(CreateView, self).get_form(form_class)
+        form.fields['assignment'].queryset = Assignment.objects.filter(pk=self.kwargs.get('asn'))
         form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs.get('enr'))
-        form.fields['assignment'].queryset = Assignment.objects.filter(pk=self.kwargs.get('pk'))
         return form
 
     def get_initial(self):
-        assignment = get_object_or_404(Assignment, pk=self.kwargs.get('pk'))
+        # Not sure why I need the enrollment here despite the fact that this class
+        # inherits from GradeFormMixin.
+        # TODO: FIX.
+        assignment = get_object_or_404(Assignment, pk=self.kwargs.get('asn'))
         enrollment = get_object_or_404(Enrollment, pk=self.kwargs.get('enr'))
         return {'assignment': assignment, 'enrollment': enrollment}
 
+        # return {'assignment': assignment}
 
-class GradeEdit(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, UpdateView):
-    fields = ['enrollment', 'assignment', 'points', 'grade']
+
+class GradeUpdate(LoginRequiredMixin, GradeViewMixin, GradeFormMixin, SectionIDMixin, UpdateView):
+    def get_form(self, form_class):
+        """
+        Only allows assignments created for that section, and only allow
+        the user that was selected to be in the field choices..
+        """
+        form = super(UpdateView, self).get_form(form_class)
+        form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs.get('enr'))
+        form.fields['assignment'].queryset = Assignment.objects.filter(pk=self.kwargs.get('asn'))
+        return form
 
     def get_initial(self):
-        enrollment = get_object_or_404(Section, pk=self.kwargs.get('pk'))
-        return {'enrollment': enrollment}
+        assignment = get_object_or_404(Assignment, pk=self.kwargs.get('asn'))
+        return {'assignment': assignment}
 
 
 class GradeDelete(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, DeleteView):
@@ -525,6 +558,60 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
             enrollments_and_grades.append((enrollment, letter_grade, needs_grading))
 
         context['enrollment_and_grades'] = enrollments_and_grades
-        context['grade_summary'] = [(grade, num_of_letter_grades[grade]) for grade in sorted(num_of_letter_grades.keys())]
+        context['grade_summary'] = [(grade, num_of_letter_grades[grade]) for grade in
+                                    sorted(num_of_letter_grades.keys())]
+
+        return context
+
+
+class AssignmentStats(LoginRequiredMixin, SectionIDMixin, TemplateView):
+    template_name = 'gradebook/assignment_stats.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(AssignmentStats, self).get_context_data(**kwargs)
+        section = get_object_or_404(Section, pk=self.kwargs.get('sec'))
+        context['current_section'] = section
+        assignment = get_object_or_404(Assignment, pk=self.kwargs.get('pk'))
+        grades = Grade.objects.filter(assignment=assignment)
+
+        context['assignment_summary'] = {
+            'A+': 0,
+            'A': 0,
+            'A-': 0,
+            'B+': 0,
+            'B': 0,
+            'B-': 0,
+            'C+': 0,
+            'C': 0,
+            'C-': 0,
+            'D+': 0,
+            'D': 0,
+            'D-': 0,
+            'F': 0,
+            'N': 0
+        }
+
+        points_earned = 0.0
+        points_possible = 0
+
+        for grade in grades:
+            context['assignment_summary'][grade.letter_grade.upper()] += 1
+            points_earned += grade.points
+            points_possible += grade.assignment.points_possible
+
+        enrollments = Enrollment.objects.filter(section=section)
+        context['assignment_summary']['N'] = len(enrollments) - sum(
+            context['assignment_summary'].values()
+        )
+
+        context['average_grade'] = to_percent(points_earned, points_possible)
+        max_points = grades.aggregate(Max('points'))['points__max']
+        context['highest_grade'] = to_percent(
+            max_points, assignment.points_possible
+        )
+
+        context['highest_grades'] = Grade.objects.filter(points=max_points)
+
+        context['assignment'] = assignment
 
         return context

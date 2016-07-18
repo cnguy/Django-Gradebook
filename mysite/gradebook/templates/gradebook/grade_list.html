@@ -81,7 +81,7 @@
         <td>{{ grade.assignment.points_possible }}</td>
         <td>{{ grade.get_percent_grade }}</td>
         <td class="table-with-buttons">
-          <a href="{% url 'grade_edit' current_section_pk grade.enrollment.pk grade.pk %}">
+          <a href="{% url 'grade_edit' current_section_pk grade.enrollment.pk grade.pk grade.assignment.pk %}">
             <button class="btn waves-effect waves-light btn amber darken-3" type="submit" name="action">
               Edit
             </button>

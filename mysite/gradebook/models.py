@@ -96,16 +96,16 @@ class Grade(models.Model):
     )
 
     points = models.FloatField()
-    grade = models.CharField(choices=ASSIGNMENT_GRADES, max_length=3, default="A+")
+    letter_grade = models.CharField(choices=ASSIGNMENT_GRADES, max_length=3, default="A+")
 
     def __str__(self):
-        return super().__str__() + str(self.assignment) + " - " + str(self.grade)
+        return super().__str__() + str(self.assignment) + " - " + str(self.letter_grade)
 
     def get_percent_grade(self):
         return to_percent(self.points, self.assignment.points_possible)
 
     def get_grade(self):
-        return dict(self.ASSIGNMENT_GRADES).get(str(self.grade))
+        return dict(self.ASSIGNMENT_GRADES).get(str(self.letter_grade))
 
 
 class Announcement(models.Model):
