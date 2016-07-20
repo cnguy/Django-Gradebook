@@ -10,6 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from .utils import *
 from django.db.models import Max
 
+
 class HomePageView(TemplateView):
     template_name = 'index.html'
 
@@ -300,7 +301,7 @@ class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, SectionIDMixin, 
         students = Student.objects.all()
         pks_of_students_not_enrolled = []
         for student in students:
-            enrollment = Enrollment.objects.filter(student=student).first()
+            enrollment = Enrollment.objects.filter(student=student, section=self.kwargs['sec']).first()
             if enrollment is None:
                 pks_of_students_not_enrolled.append(student.pk)
 
