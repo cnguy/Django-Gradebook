@@ -3,9 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <title>Title</title>
+  {% load staticfiles %}
+  <link rel="stylesheet" type="text/css" href="{% static 'gradebook/css/materialize.css' %}"/>
 </head>
 <body>
-Hey! :)
-<a href="{% url 'login' %}">Login</a>
+<div id="container" class="center-align">
+<h1>Welcome to Grade</h1>
+
+<a class="waves-effect waves-light btn-large" href="{% url 'login' %}">Login</a>
+<a class="waves-effect waves-light btn-large" href="{% url 'register' %}">Register</a>
+</div>
+<script type="text/javascript" src="{% static 'gradebook/js/materialize.js' %}"></script>
 </body>
 </html>

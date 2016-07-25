@@ -270,12 +270,23 @@ class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, Announcement
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs['sec'])
         return form
 
+    def get_context_data(self, **kwargs):
+        context = super(AnnouncementCreate, self).get_context_data(**kwargs)
+        context['title'] = "Create an assignment"
+        return context
+
 
 class AnnouncementUpdate(LoginRequiredMixin, AnnouncementViewMixin, AnnouncementFormMixin, SectionIDMixin, UpdateView):
     def get_form(self, form_class=None):
         form = super(UpdateView, self).get_form(form_class)
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs['sec'])
         return form
+
+    def get_context_data(self, **kwargs):
+        context = super(AnnouncementUpdate, self).get_context_data(**kwargs)
+        announcement = get_object_or_404(Announcement, pk=self.kwargs['pk'])
+        context['title'] = "Editing announcement {announcement}".format(announcement=announcement)
+        return context
 
 
 class AnnouncementDelete(LoginRequiredMixin, AnnouncementViewMixin, DeleteView):
@@ -314,6 +325,11 @@ class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, SectionIDMixin, 
         section = get_object_or_404(Section, pk=self.kwargs['sec'])
         return {'section': section}
 
+    def get_context_data(self, **kwargs):
+        context = super(EnrollmentCreate, self).get_context_data(**kwargs)
+        context['title'] = "Enroll a new student"
+        return context
+
 
 class EnrollmentDelete(LoginRequiredMixin, EnrollmentViewMixin, DeleteView):
     pass
@@ -340,12 +356,23 @@ class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMi
         section = get_object_or_404(Section, pk=self.kwargs['sec'])
         return {'section': section}
 
+    def get_context_data(self, **kwargs):
+        context = super(AssignmentCreate, self).get_context_data(**kwargs)
+        context['title'] = "Create a new assignment"
+        return context
+
 
 class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMixin, SectionIDMixin, UpdateView):
     def get_form(self, form_class=None):
         form = super(UpdateView, self).get_form(form_class)
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs['sec'])
         return form
+
+    def get_context_data(self, **kwargs):
+        context = super(AssignmentUpdate, self).get_context_data(**kwargs)
+        assignment = get_object_or_404(Assignment, pk=self.kwargs['pk'])
+        context['title'] = "Editing: {assignment}".format(assignment=assignment)
+        return context
 
 
 class AssignmentDelete(LoginRequiredMixin, AssignmentViewMixin, DeleteView):

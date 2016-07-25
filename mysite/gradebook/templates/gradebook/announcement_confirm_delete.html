@@ -4,7 +4,7 @@
 <form method="POST">
   {% csrf_token %}
   {{ form.as_p }}
-  <h6>Are you sure you want to drop {{ object.title }} from {{ object.section }}?</h6>
+  <h6>Are you sure you want to drop "{{ object.headline }}" from {{ object.section }}?</h6>
   <button class="btn waves-effect waves-light btn" type="submit" name="action">
     Submit
     <i class="material-icons right">done</i>

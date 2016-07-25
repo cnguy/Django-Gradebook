@@ -152,17 +152,24 @@
             <td>{{ enrolled.student.user.first_name }}</td>
             {% if assignments|length == 0%}
             <td>NO ASSIGNMENTS</td>
-            {% elif not needs_grading %}
-            <td>{{ grade }}</td>
             {% else %}
-            <td>{{ grade }} <em style="color: #616161">*NEEDS GRADING*</em></td>
+            <td>{{ grade }}</td>
+
             {% endif %}
             <td class="table-with-buttons">
+              {% if not needs_grading %}
               <a href="{% url 'grade_list' enrolled.section.pk enrolled.pk %}">
                 <button class="btn waves-effect waves-light btn light-blue darken-3" type="submit" name="action">
                   Grades
                 </button>
               </a>
+              {% else %}
+              <a href="{% url 'grade_list' enrolled.section.pk enrolled.pk %}">
+                <button class="btn waves-effect waves-light btn orange" type="submit" name="action">
+                  Needs Grading
+                </button>
+              </a>
+              {% endif %}
               <a href="{% url 'enrollment_delete' enrolled.section.pk enrolled.pk %}">
                 <button class="btn waves-effect waves-light btn red" type="submit" name="action">
                   Drop

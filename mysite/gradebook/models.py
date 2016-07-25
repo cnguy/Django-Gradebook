@@ -113,3 +113,6 @@ class Announcement(models.Model):
     headline = models.CharField(max_length=50)
     details = models.TextField(max_length=200)
     date_time_created = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return "[{section}] {title}".format(section=self.section, title=self.headline)
