@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from .utils import *
+import datetime
+import pytz
 
 
 class Course(models.Model):
@@ -54,7 +56,12 @@ class Assignment(models.Model):
     title = models.CharField(max_length=100)
     description = models.CharField(max_length=200)
     date_time_created = models.DateTimeField(default=timezone.now)
-    date_time_due = models.DateTimeField(blank=True, null=True)
+
+    # Separated because materialize.css does not play well with DateTime form fields.
+    # date_time_created uses timezone.now, so it's okay for that to stay as it is.
+    date_due = models.DateField(default=datetime.date.today)
+    time_due = models.TimeField(default=datetime.time)
+
     points_possible = models.IntegerField()
 
     CATEGORIES = {
@@ -97,6 +104,8 @@ class Grade(models.Model):
 
     points = models.FloatField()
     letter_grade = models.CharField(choices=ASSIGNMENT_GRADES, max_length=3, default="A+")
+    date_time_turned_in = models.DateTimeField(default=timezone.now)
+
 
     def __str__(self):
         return super().__str__() + str(self.assignment) + " - " + str(self.letter_grade)
@@ -107,6 +116,13 @@ class Grade(models.Model):
     def get_grade(self):
         return dict(self.ASSIGNMENT_GRADES).get(str(self.letter_grade))
 
+    def on_time(self):
+        """Multiple function calls when templating, but it's to make everything simpler."""
+        naive_assignment_dt_due = datetime.datetime.combine(self.assignment.date_due, self.assignment.time_due)
+        local_timezone = pytz.timezone("America/Los_Angeles")
+        local_assignment_dt_due = local_timezone.localize(naive_assignment_dt_due, is_dst=None)
+        utc_dt = local_assignment_dt_due.astimezone(pytz.utc)
+        return self.date_time_turned_in <= utc_dt
 
 class Announcement(models.Model):
     section = models.ForeignKey(Section)

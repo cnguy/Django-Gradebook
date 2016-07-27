@@ -9,6 +9,7 @@ from .forms import LoginForm
 from django.core.exceptions import ObjectDoesNotExist
 from .utils import *
 from django.db.models import Max
+from django.views.generic.base import ContextMixin
 
 
 class HomePageView(TemplateView):
@@ -16,6 +17,7 @@ class HomePageView(TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated():
+            url = ''
             try:
                 teacher = Teacher.objects.filter(user=request.user)
                 if teacher is not None:
@@ -197,7 +199,7 @@ class SomeSecretView(LoginRequiredMixin, TemplateView):
     raise_exception = False
 
 
-class SectionIDMixin(object):
+class SectionIDMixin(ContextMixin):
     """
     This is for other Classes to inherit so that they can all have the section id needed
     to link back to the previous section's page. I use this for the Create/Update/List forms.
@@ -249,7 +251,7 @@ class SectionList(LoginRequiredMixin, ListView):
         return Section.objects.filter(teacher=teacher)
 
 
-class AnnouncementViewMixin(object):
+class AnnouncementViewMixin(ContextMixin):
     model = Announcement
 
     def get_success_url(self):
@@ -266,7 +268,7 @@ class AnnouncementFormMixin(object):
 
 class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, AnnouncementFormMixin, SectionIDMixin, CreateView):
     def get_form(self, form_class=None):
-        form = super(CreateView, self).get_form(form_class)
+        form = super(AnnouncementCreate, self).get_form(form_class)
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs['sec'])
         return form
 
@@ -278,7 +280,7 @@ class AnnouncementCreate(LoginRequiredMixin, AnnouncementViewMixin, Announcement
 
 class AnnouncementUpdate(LoginRequiredMixin, AnnouncementViewMixin, AnnouncementFormMixin, SectionIDMixin, UpdateView):
     def get_form(self, form_class=None):
-        form = super(UpdateView, self).get_form(form_class)
+        form = super(AnnouncementUpdate, self).get_form(form_class)
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs['sec'])
         return form
 
@@ -308,7 +310,7 @@ class EnrollmentCreate(LoginRequiredMixin, EnrollmentViewMixin, SectionIDMixin, 
         Only displays the section to prevent enrolling to other sections.
         Only displays students not already enrolled to be in the queryset.
         """
-        form = super(CreateView, self).get_form(form_class)
+        form = super(EnrollmentCreate, self).get_form(form_class)
         students = Student.objects.all()
         pks_of_students_not_enrolled = []
         for student in students:
@@ -343,12 +345,12 @@ class AssignmentViewMixin(object):
 
 
 class AssignmentFormMixin(object):
-    fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_time_due']
+    fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_due', 'time_due']
 
 
 class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMixin, SectionIDMixin, CreateView):
     def get_form(self, form_class=None):
-        form = super(CreateView, self).get_form(form_class)
+        form = super(AssignmentCreate, self).get_form(form_class)
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs['sec'])
         return form
 
@@ -364,7 +366,7 @@ class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMi
 
 class AssignmentUpdate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMixin, SectionIDMixin, UpdateView):
     def get_form(self, form_class=None):
-        form = super(UpdateView, self).get_form(form_class)
+        form = super(AssignmentUpdate, self).get_form(form_class)
         form.fields['section'].queryset = Section.objects.filter(pk=self.kwargs['sec'])
         return form
 
@@ -383,8 +385,8 @@ class GradeViewMixin(object):
     model = Grade
 
 
-class GradeFormMixin(object):
-    fields = ['enrollment', 'assignment', 'points', 'letter_grade']
+class GradeFormMixin(ContextMixin):
+    fields = ['enrollment', 'assignment', 'points', 'letter_grade', 'date_time_turned_in']
 
     def get_success_url(self):
         return reverse_lazy(
@@ -467,7 +469,7 @@ class GradeCreate(LoginRequiredMixin, GradeViewMixin, GradeFormMixin, SectionIDM
         Only allows assignments created for that section, and only allow
         the user that was selected to be in the field choices..
         """
-        form = super(CreateView, self).get_form(form_class)
+        form = super(GradeCreate, self).get_form(form_class)
         form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs['enr'])
 
         # Don't allow assignments that are already graded for the enrolled to show up
@@ -498,7 +500,7 @@ class GradeCreateOffAssignment(LoginRequiredMixin, GradeViewMixin, GradeFormMixi
     specific assignment on a specific student's page.
     """
     def get_form(self, form_class=None):
-        form = super(CreateView, self).get_form(form_class)
+        form = super(GradeCreateOffAssignment, self).get_form(form_class)
         form.fields['assignment'].queryset = Assignment.objects.filter(pk=self.kwargs['asn'])
         form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs['enr'])
         return form
@@ -515,7 +517,7 @@ class GradeUpdate(LoginRequiredMixin, GradeViewMixin, GradeFormMixin, SectionIDM
         Only allows assignments created for that section, and only allow
         the user that was selected to be in the field choices..
         """
-        form = super(UpdateView, self).get_form(form_class)
+        form = super(GradeUpdate, self).get_form(form_class)
         form.fields['enrollment'].queryset = Enrollment.objects.filter(pk=self.kwargs['enr'])
         form.fields['assignment'].queryset = Assignment.objects.filter(pk=self.kwargs['asn'])
         return form

@@ -37,6 +37,7 @@
         <th data-field="category">Category</th>
         <th data-field="title">Title</th>
         <th data-field="date_time_created">Grade</th>
+        <th data-field="late_marker">On Time</th>
         <th data-field="points">Points</th>
         <th data-field="total_points">Total Points</th>
         <th data-field="percentage_grade">%</th>
@@ -48,6 +49,7 @@
         <td></td>
         <td>Total</td>
         <td>{{ final_letter_grade }}</td>
+        <td></td>
         <td>{{ points_earned }}</td>
         <td>{{ points_possible }}</td>
         <td>{{ total_grade_percentage }}</td>
@@ -59,6 +61,7 @@
         <td>{{ assignment.get_assignment_category }}</td>
         <td>{{ assignment.title }}</td>
         <td>N</td>
+        <td></td>
         <td>0</td>
         <td>{{ assignment.points_possible }}</td>
         <td></td>
@@ -77,6 +80,7 @@
         <td>{{ grade.assignment.get_assignment_category }}</td>
         <td>{{ grade.assignment.title }}</td>
         <td>{{ grade.get_grade }}</td>
+        <td>{{ grade.on_time }}</td>
         <td>{{ grade.points }}</td>
         <td>{{ grade.assignment.points_possible }}</td>
         <td>{{ grade.get_percent_grade }}</td>
