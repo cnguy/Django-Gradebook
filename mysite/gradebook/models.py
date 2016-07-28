@@ -124,6 +124,7 @@ class Grade(models.Model):
         utc_dt = local_assignment_dt_due.astimezone(pytz.utc)
         return self.date_time_turned_in <= utc_dt
 
+
 class Announcement(models.Model):
     section = models.ForeignKey(Section)
     headline = models.CharField(max_length=50)

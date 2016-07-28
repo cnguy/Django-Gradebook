@@ -533,7 +533,7 @@ class GradeDelete(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, DeleteView
 
 class SpecificSection(LoginRequiredMixin, TemplateView):
     """
-    A custom view to display the description, annoucenments, assignments,
+    A custom view to display the description, announcements, assignments,
     and enrollments of a specific section.
     """
     template_name = 'gradebook/section.html'
@@ -588,43 +588,48 @@ class AssignmentStats(LoginRequiredMixin, SectionIDMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(AssignmentStats, self).get_context_data(**kwargs)
         section = get_object_or_404(Section, pk=self.kwargs['sec'])
-        context['current_section'] = section
         assignment = get_object_or_404(Assignment, pk=self.kwargs['asn'])
         grades = Grade.objects.filter(assignment=assignment)
+        enrollments = Enrollment.objects.filter(section=section)
 
+        context['current_section'] = section
+        context['assignment'] = assignment
+        context['grades'] = grades.order_by('-points') # Sort from highest points to lowest.
         context['assignment_summary'] = {
-            'A+': 0,
-            'A': 0,
-            'A-': 0,
-            'B+': 0,
-            'B': 0,
-            'B-': 0,
-            'C+': 0,
-            'C': 0,
-            'C-': 0,
-            'D+': 0,
-            'D': 0,
-            'D-': 0,
-            'F': 0,
-            'N': 0
+            'A+': 0, 'A': 0, 'A-': 0,
+            'B+': 0, 'B': 0, 'B-': 0,
+            'C+': 0, 'C': 0, 'C-': 0,
+            'D+': 0, 'D': 0, 'D-': 0,
+            'F': 0, 'N': 0
         }
 
-        points_earned = 0.0
-        points_possible = 0
+        # The sum of points earned and possible for all students.
+        # This is used to determine the average grade.
+        points_earned_btw_all_students = 0.0
+        points_possible_btw_all_students = 0
 
         for grade in grades:
             context['assignment_summary'][grade.letter_grade.upper()] += 1
-            points_earned += grade.points
-            points_possible += grade.assignment.points_possible
+            points_earned_btw_all_students += grade.points
+            points_possible_btw_all_students += assignment.points_possible
 
-        enrollments = Enrollment.objects.filter(section=section)
+        context['average_grade'] = to_percent(
+            points_earned_btw_all_students,
+            points_possible_btw_all_students
+        ) if points_possible_btw_all_students != 0 else 'N'
+
+        # [N] is the number of non-graded assignments.
         context['assignment_summary']['N'] = len(enrollments) - sum(context['assignment_summary'].values())
-        context['average_grade'] = to_percent(points_earned, points_possible)
-        max_points = grades.aggregate(Max('points'))['points__max']
-        context['highest_grade'] = to_percent(max_points, assignment.points_possible)
-        context['assignment'] = assignment
+        max_points = grades.aggregate(Max('points'))['points__max'] if len(grades) != 0 else 0
+        context['highest_grade'] = to_percent(
+            max_points,
+            assignment.points_possible
+        ) if points_possible_btw_all_students != 0 else 'N'
 
-        # Grab all the enrollments with the highest grade.
-        context['highest_grades'] = Grade.objects.filter(points=max_points)
+        enrollments_graded = [grade.enrollment for grade in grades]
+
+        context['enrollments_to_be_graded'] = [
+            enrollment for enrollment in enrollments if enrollment not in enrollments_graded
+            ]
 
         return context

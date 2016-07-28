@@ -93,14 +93,52 @@
       <tr>
         <td>Highest Grade</td>
         <td>{{ highest_grade }}</td>
-        {% for grade in highest_grades %}
-        <td>{{ grade.enrollment.student }}</td>
-        {% endfor %}
       </tr>
       <tr>
         <td># of Missing Assignments</td>
         <td>{{ assignment_summary.N }}</td>
       </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col s12">
+    <table class="highlight responsive-table">
+      <thead>
+      <tr>
+        <th data-field="last-name">Last Name</th>
+        <th data-field="first-name">First Name</th>
+        <th data-field="points">Points</th>
+        <th data-field="percentage">Percentage</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      {% for grade in grades %}
+      <tr>
+        <td>{{ grade.enrollment.student.user.last_name }}</td>
+        <td>{{ grade.enrollment.student.user.first_name }}</td>
+        <td>{{ grade.points }}</td>
+        <td>{{ grade.get_percent_grade }}</td>
+      </tr>
+      {% endfor %}
+
+      {% for enrollment in enrollments_to_be_graded %}
+      <tr>
+        <td>{{ enrollment.student.user.last_name }}</td>
+        <td>{{ enrollment.student.user.first_name }}</td>
+        <td>N</td>
+        <td>
+          <a href="{% url 'grade_new_off_assignment' current_section.pk enrollment.pk assignment.pk %}">
+          <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
+            Grade
+          </button>
+        </a>
+        </td>
+      </tr>
+      {% endfor %}
       </tbody>
     </table>
   </div>
