@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^staff/(?P<sec>\d+)/announcements/(?P<pk>\d+)/delete/$', views.AnnouncementDelete.as_view(), name='announcement_delete'),
     url(r'^staff/(?P<sec>\d+)/assignments/add/$', views.AssignmentCreate.as_view(), name='assignment_new'),
     url(r'^staff/(?P<sec>\d+)/assignments/(?P<pk>\d+)/edit/$', views.AssignmentUpdate.as_view(), name='assignment_edit'),
+    url(r'^staff/(?P<sec>\d+)/assignments/(?P<pk>\d+)/delete/$', views.AssignmentDelete.as_view(), name='assignment_delete'),
     url(r'^staff/(?P<sec>\d+)/assignments/(?P<asn>\d+)/stats/$', views.AssignmentStats.as_view(), name='assignment_stats'),
     url(r'^staff/(?P<sec>\d+)/enrollments/add/$', views.EnrollmentCreate.as_view(), name='enrollment_new'),
     url(r'^staff/(?P<sec>\d+)/enrollments/(?P<pk>\d+)/delete/$', views.EnrollmentDelete.as_view(), name='enrollment_delete'),

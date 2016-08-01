@@ -409,8 +409,9 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(GradeList, self).get_context_data(**kwargs)
         enrollment = get_object_or_404(Enrollment, id=self.kwargs['enr'], section=self.kwargs['sec'])
-        context['enrollment'] = enrollment
         grades = Grade.objects.filter(enrollment=enrollment)
+
+        context['enrollment'] = enrollment
 
         # Quick summary of total points earned and total points possible.
         points_earned = {'essay': 0.0, 'test': 0.0, 'quiz': 0.0, 'ps': 0.0, 'hwk': 0.0, 'ec': 0.0}
@@ -542,11 +543,11 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
         context = super(SpecificSection, self).get_context_data(**kwargs)
         teacher = get_object_or_404(Teacher, user=self.request.user)
         section = get_object_or_404(Section, teacher=teacher, pk=self.kwargs['sec'])
+
         context['current_section'] = section
         context['announcements'] = Announcement.objects.filter(section=section).order_by('date_time_created')
         context['assignments'] = Assignment.objects.filter(section=section).order_by('date_time_created')
         context['enrollments'] = Enrollment.objects.filter(section=section).order_by('student__user__last_name')
-
         context['enrollments_and_grades'] = []
 
         # Number of a's, number of b's, etc.
