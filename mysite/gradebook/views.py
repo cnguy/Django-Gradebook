@@ -345,7 +345,7 @@ class AssignmentViewMixin(object):
 
 
 class AssignmentFormMixin(object):
-    fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_time_created', 'date_due', 'time_due']
+    fields = ['section', 'title', 'description', 'category', 'points_possible', 'date_due', 'time_due']
 
 
 class AssignmentCreate(LoginRequiredMixin, AssignmentViewMixin, AssignmentFormMixin, SectionIDMixin, CreateView):
@@ -546,7 +546,7 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
 
         context['current_section'] = section
         context['announcements'] = Announcement.objects.filter(section=section).order_by('date_time_created')
-        context['assignments'] = Assignment.objects.filter(section=section).order_by('date_time_created')
+        context['assignments'] = Assignment.objects.filter(section=section).order_by('date_due')
         context['enrollments'] = Enrollment.objects.filter(section=section).order_by('student__user__last_name')
         context['enrollments_and_grades'] = []
 

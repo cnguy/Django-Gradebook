@@ -55,7 +55,6 @@ class Assignment(models.Model):
 
     title = models.CharField(max_length=100)
     description = models.CharField(max_length=200)
-    date_time_created = models.DateTimeField(default=timezone.now)
 
     # Separated because materialize.css does not play well with DateTime form fields.
     # date_time_created uses timezone.now, so it's okay for that to stay as it is.
