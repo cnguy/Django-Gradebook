@@ -1,0 +1,21 @@
+{% extends 'base_list.html' %}
+
+{% block content %}
+
+<thead>
+<tr>
+  <th data-field="title">Title</th>
+  <th data-field="description">Description</th>
+</tr>
+</thead>
+
+<tbody>
+{% for course in course_list %}
+<tr>
+  <td>{{ course.title }}</td>
+  <td>{{ course.description }}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+{% endblock %}

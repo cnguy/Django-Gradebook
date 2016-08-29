@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+
+<ol>
+  {% for enrolled in enrollment_list %}
+  <li>
+    <a href="{% url 'grade_list' enrolled.section.course.id enrolled.section.id enrolled.pk %}">{{ enrolled.student }}</a>
+  </li>
+  {% endfor %}
+    <a href="{% url 'enrollment_new' %}">Enroll a student</a>
+</ol>
+
+</body>
+</html>

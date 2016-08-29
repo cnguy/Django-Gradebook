@@ -1,0 +1,147 @@
+{% extends 'generic_view.html' %}
+
+{% block content %}
+{% load staticfiles %}
+{% load get %}
+
+<p>
+<h3>{{ current_section.course.title }}</h3>
+<h5>Section ID: {{ current_section.section_id }}</h5>
+<a href="{% url 'section' current_section_pk %}">
+    <button class="btn waves-effect waves-light btn red" name="back" type="button">
+      Back
+    </button>
+  </a>
+<h6>{{ assignment }}</h6>
+<h6>Points Possible: {{ assignment.points_possible }}</h6>
+</p>
+<div class="row">
+  <div class="col s6">
+    <div id="chart"></div>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+      $(document).ready(function () {
+        // Because of my IDE's interaction with Django templating and javascript
+        // I set the variables to the string version of my data.
+        // This makes editing less of a pain (the double curly brackets mess up the IDE's
+        // indenting features.
+        var _a = +"{{ assignment_summary|get:"A+" }}";
+        var a = +"{{ assignment_summary.A }}";
+        var a_ = +"{{ assignment_summary|get:"A-" }}";
+        var _b = +"{{ assignment_summary|get:"B+" }}";
+        var b = +"{{ assignment_summary.B }}";
+        var b_ = +"{{ assignment_summary|get:"B-" }}";
+        var _c = +"{{ assignment_summary|get:"C+" }}";
+        var c = +"{{ assignment_summary.C }}";
+        var c_ = +"{{ assignment_summary|get:"C-" }}";
+        var _d = +"{{ assignment_summary|get:"D+" }}";
+        var d = "{{ assignment_summary.D }}";
+        var d_ = +"{{ assignment_summary|get:"D-" }}";
+        var f = +"{{ assignment_summary.F }}";
+        var n = +"{{ assignment_summary.N }}";
+        var chart = c3.generate({
+          bindto: '#chart',
+          data: {
+            columns: [
+              ['', _a, a, a_, _b, b, b_, _c, c, c_, _d, d, d_, f, n]
+            ],
+            type: 'bar',
+            labels: {
+              format: {
+                x: 'categorized'
+              }
+            },
+            types: {
+              grades: 'bar'
+            }
+          },
+          axis: {
+            x: {
+              tick: {
+                values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+              },
+              type: 'category',
+              categories: ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F', 'N']
+            },
+            y: {
+              min: 1,
+              max: 10
+            }
+          },
+          legend: {
+            show: false
+          }
+        });
+      });
+    </script>
+  </div>
+  <div class="col s6">
+    <table class="highlight responsive-table">
+      <thead>
+      <tr>
+        <th data-field="info_title">Info Title</th>
+        <th data-field="value">Value</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      <tr>
+        <td>Average Grade</td>
+        <td>{{ average_grade }}</td>
+      </tr>
+      <tr>
+        <td>Highest Grade</td>
+        <td>{{ highest_grade }}</td>
+      </tr>
+      <tr>
+        <td># of Missing Assignments</td>
+        <td>{{ assignment_summary.N }}</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col s12">
+    <table class="highlight responsive-table">
+      <thead>
+      <tr>
+        <th data-field="last-name">Last Name</th>
+        <th data-field="first-name">First Name</th>
+        <th data-field="points">Points</th>
+        <th data-field="percentage">Percentage</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      {% for grade in grades %}
+      <tr>
+        <td>{{ grade.enrollment.student.user.last_name }}</td>
+        <td>{{ grade.enrollment.student.user.first_name }}</td>
+        <td>{{ grade.points }}</td>
+        <td>{{ grade.get_percent_grade }}</td>
+      </tr>
+      {% endfor %}
+
+      {% for enrollment in enrollments_to_be_graded %}
+      <tr>
+        <td>{{ enrollment.student.user.last_name }}</td>
+        <td>{{ enrollment.student.user.first_name }}</td>
+        <td>N</td>
+        <td>
+          <a href="{% url 'grade_new_off_assignment' current_section.pk enrollment.pk assignment.pk %}">
+          <button class="btn waves-effect waves-light btn" style="width: 100%;" type="submit" name="action">
+            Grade
+          </button>
+        </a>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
