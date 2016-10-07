@@ -1,4 +1,4 @@
-https://www.cnguyen.herokuapp.com/portfolio/2
+https://cnguyen.herokuapp.com/portfolio/2
 
 I initially built this as a way to learn a framework that has a bunch more built-in tools than a microframework like Flask. Although I have already used Flask for a previous project, I wanted something a bit bigger that would make my life easier while creating a more than basic CRUD application.
 
