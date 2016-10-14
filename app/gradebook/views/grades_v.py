@@ -88,7 +88,7 @@ class GradeList(LoginRequiredMixin, GradeViewMixin, SectionIDMixin, ListView):
             else (convert(category), to_percent(points_earned[category], points_possible[category]))
             for category in points_earned
             ]
-
+        
         return context
 
 

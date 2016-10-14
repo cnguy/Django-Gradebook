@@ -43,10 +43,8 @@ class SpecificSection(LoginRequiredMixin, TemplateView):
             float_percentage = float(percentage)
             letter_grade = get_letter_grade(float_percentage)
             num_of_letter_grades[letter_grade] += 1
-
-            # If the number of grades objects is not the same as the number of assignment
-            # objects, that means not everything is graded.
-            needs_grading = True if len(grades) != len(context['assignments']) else False
+            # If # of graded assignments != # of assignments, student has ungraded assignments.
+            needs_grading = len(grades) != len(context['assignments'])
 
             context['enrollments_and_grades'].append((enrollment, letter_grade, needs_grading))
 
