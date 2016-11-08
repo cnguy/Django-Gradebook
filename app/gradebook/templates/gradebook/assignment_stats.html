@@ -4,19 +4,26 @@
 {% load staticfiles %}
 {% load get %}
 
-<p>
-<h3>{{ current_section.course.title }}</h3>
-<h5>Section ID: {{ current_section.section_id }}</h5>
-<a href="{% url 'section' current_section_pk %}">
-    <button class="btn waves-effect waves-light btn red" name="back" type="button">
-      Back
-    </button>
-  </a>
-<h6>{{ assignment }}</h6>
-<h6>Points Possible: {{ assignment.points_possible }}</h6>
-</p>
 <div class="row">
-  <div class="col s6">
+  <div class="col s12">
+    <div class="card blue-grey darken-1">
+      <div class="card-content white-text">
+        <span class="card-title">{{ assignment.title }}</span>
+        <p>section: {{ current_section.course.title }}</p>
+        <p>section id: {{ current_section.section_id }}</p>
+        <p>category: {{ assignment.get_assignment_category }}</p>
+        <p>description: {{ assignment.description }}</p>
+        <p>points possible: {{ assignment.points_possible }}</p>
+      </div>
+       <div class="card-action">
+        <a href="{% url 'section' current_section_pk %}">Back</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col s8">
     <div id="chart"></div>
 
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -76,15 +83,8 @@
       });
     </script>
   </div>
-  <div class="col s6">
-    <table class="highlight responsive-table">
-      <thead>
-      <tr>
-        <th data-field="info_title">Info Title</th>
-        <th data-field="value">Value</th>
-      </tr>
-      </thead>
-
+  <div class="col s4">
+    <table class="highlight bordered responsive-table">
       <tbody>
       <tr>
         <td>Average Grade</td>
@@ -97,6 +97,10 @@
       <tr>
         <td># of Missing Assignments</td>
         <td>{{ assignment_summary.N }}</td>
+      </tr>
+      <tr>
+        <td># of Late Assignments</td>
+        <td>{{ num_of_late_assignments }}
       </tr>
       </tbody>
     </table>
@@ -112,16 +116,18 @@
         <th data-field="first-name">First Name</th>
         <th data-field="points">Points</th>
         <th data-field="percentage">Percentage</th>
+        <th data-field="on-time">On Time</th>
       </tr>
       </thead>
 
       <tbody>
-      {% for grade in grades %}
-      <tr>
-        <td>{{ grade.enrollment.student.user.last_name }}</td>
-        <td>{{ grade.enrollment.student.user.first_name }}</td>
-        <td>{{ grade.points }}</td>
-        <td>{{ grade.get_percent_grade }}</td>
+      {% for grade in grades_with_colors %}
+      <tr bgcolor="{{grade.1}}">
+        <td>{{ grade.0.enrollment.student.user.last_name }}</td>
+        <td>{{ grade.0.enrollment.student.user.first_name }}</td>
+        <td>{{ grade.0.points }}</td>
+        <td>{{ grade.0.get_percent_grade }}</td>
+        <td>{{ grade.0.on_time }}</td>
       </tr>
       {% endfor %}
 
@@ -129,6 +135,7 @@
       <tr>
         <td>{{ enrollment.student.user.last_name }}</td>
         <td>{{ enrollment.student.user.first_name }}</td>
+        <td>N</td>
         <td>N</td>
         <td>
           <a href="{% url 'grade_new_off_assignment' current_section.pk enrollment.pk assignment.pk %}">

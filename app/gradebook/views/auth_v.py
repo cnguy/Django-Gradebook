@@ -14,28 +14,34 @@ class LoginPageView(FormView):
     # TODO: FIX CSRF
     template_name = 'login.html'
     form_class = LoginForm
-    success_url = ''
+    success_url = 'section_list'
 
     def dispatch(self, request, *args, **kwargs):
         if request.method == 'GET':
+            # Login view.
+            # Note: Redirects authenticated users away from the login page.
             user = request.user
             if user.is_authenticated():
                 url = ''
+
                 try:
                     teacher = Teacher.objects.filter(user=user).first()
                     if teacher is not None:
                         url = 'section_list'
                 except Teacher.DoesNotExist:
                     pass
+                
                 try:
                     student = Student.objects.filter(user=user).first()
                     if student is not None:
                         url = 'secret'
                 except Student.DoesNotExist:
                     pass
+
                 return redirect(url)
             return super(LoginPageView, self).dispatch(request, *args, **kwargs)
         else:
+            # Actual login logic.
             username = request.POST.get('username')
             password = request.POST.get('password')
 
@@ -44,12 +50,14 @@ class LoginPageView(FormView):
             if user is not None:
                 login(request, user)
                 url = ''
+
                 try:
                     teacher = Teacher.objects.filter(user=user).first()
                     if teacher is not None:
                         url = 'section_list'
                 except Teacher.DoesNotExist:
                     pass
+                
                 try:
                     student = Student.objects.filter(user=user).first()
                     if student is not None:
@@ -58,8 +66,7 @@ class LoginPageView(FormView):
                     pass
 
                 return redirect(url)
-            else:
-                return super(LoginPageView, self).dispatch(request, *args, **kwargs)
+            return super(LoginPageView, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         return super(LoginPageView, self).form_valid(form)
@@ -78,13 +85,17 @@ class RegisterPageView(TemplateView):
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         if user.is_authenticated():
+            # Register view.
+            # Note: Redirects authenticated users away from the register page.
             url = ''
+
             try:
                 teacher = Teacher.objects.filter(user=user).first()
                 if teacher is not None:
                     url = 'section_list'
             except Teacher.DoesNotExist:
                 pass
+            
             try:
                 student = Student.objects.filter(user=user).first()
                 if student is not None:

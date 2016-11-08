@@ -1,14 +1,15 @@
 .idea
-app/db.sqlite3
 __pycache__
 .DS_Store
 
 env
 inspirations
 
+app/db.sqlite3
 app/gradebook/static/gradebook/c3
 app/gradebook/static/gradebook/css/materialize.css
 app/gradebook/static/gradebook/css/materialize.min.css
 app/gradebook/static/gradebook/gradebook
 app/gradebook/static/gradebook/js
 app/gradebook/migrations
+tests.py

@@ -65,7 +65,7 @@ class AssignmentStats(LoginRequiredMixin, SectionIDMixin, TemplateView):
 
         context['current_section'] = section
         context['assignment'] = assignment
-        context['grades'] = grades.order_by('-points') # Sort from highest points to lowest.
+        grades = grades.order_by('-points') # Sort from highest points to lowest.
         context['assignment_summary'] = {
             'A+': 0, 'A': 0, 'A-': 0,
             'B+': 0, 'B': 0, 'B-': 0,
@@ -74,15 +74,32 @@ class AssignmentStats(LoginRequiredMixin, SectionIDMixin, TemplateView):
             'F': 0, 'N': 0
         }
 
+        context['grades_with_colors'] = []
         # The sum of points earned and possible for all students.
         # This is used to determine the average grade.
         points_earned_btw_all_students = 0.0
         points_possible_btw_all_students = 0
+        num_of_late_assignments = 0
 
         for grade in grades:
             context['assignment_summary'][grade.letter_grade.upper()] += 1
             points_earned_btw_all_students += grade.points
             points_possible_btw_all_students += assignment.points_possible
+            if not(grade.on_time()):
+                num_of_late_assignments += 1
+
+            # grade logic
+            color = ""
+            grade_of_current = grade.get_grade()[0:1]
+            if grade_of_current == "A":
+                color = "#a5d6a7"
+            elif grade_of_current == "B":
+                color ="#b3e5fc"
+            elif grade_of_current == "C":
+                color = "#f0f4c3"
+            else:
+                color = "#ffcdd2"
+            context['grades_with_colors'].append((grade, color))
 
         context['average_grade'] = to_percent(
             points_earned_btw_all_students,
@@ -96,6 +113,7 @@ class AssignmentStats(LoginRequiredMixin, SectionIDMixin, TemplateView):
             max_points,
             assignment.points_possible
         ) if points_possible_btw_all_students != 0 else 'N'
+        context['num_of_late_assignments'] = num_of_late_assignments
 
         enrollments_graded = [grade.enrollment for grade in grades]
 
