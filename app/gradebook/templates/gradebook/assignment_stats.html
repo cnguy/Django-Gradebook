@@ -127,7 +127,13 @@
         <td>{{ grade.0.enrollment.student.user.first_name }}</td>
         <td>{{ grade.0.points }}</td>
         <td>{{ grade.0.get_percent_grade }}</td>
-        <td>{{ grade.0.on_time }}</td>
+        <td>
+          {% if grade.0.on_time %}
+            <i class="fa fa-check" style="color: green;" aria-hidden="true"></i>
+          {% else %}
+            <i class="fa fa-times" style="color: red;" aria-hidden="true"></i>
+          {% endif %}
+        </td>
       </tr>
       {% endfor %}
 
